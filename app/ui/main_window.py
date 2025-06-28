@@ -1,9 +1,11 @@
-from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QWidget, QFrame, QSplitter, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QActionGroup, QFrame, QSplitter, QHBoxLayout
 from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
 from app.ui.docks.elements import Elements
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
 from app.core.logger import ActivityLogger
+from utils.constants import ICONS_PATH
 
 
 class MainWindow(QMainWindow):
@@ -37,7 +39,53 @@ class MainWindow(QMainWindow):
         toolbar.setFloatable(True)
         toolbar.setAllowedAreas(Qt.ToolBarArea.AllToolBarAreas)
 
+        save_action = QAction(QIcon(f"{ICONS_PATH}/save.png"), "Save", self)
+        open_file_action = QAction(QIcon(f"{ICONS_PATH}/open-folder.png"), "Open", self)
+
+        control_group = QActionGroup(self)
+        control_group.setExclusive(True)
+
+        
+        add_state_action = QAction(QIcon(f"{ICONS_PATH}/add.png"), "Add State", self)
+        add_state_action.setCheckable(True)
+        add_initial_state_action = QAction(QIcon(f"{ICONS_PATH}/input.png"), "Add Initial State", self)
+        add_initial_state_action.setCheckable(True)
+        add_accepting_state_action = QAction(QIcon(f"{ICONS_PATH}/accept.png"), "Add Accepting State", self)
+        add_accepting_state_action.setCheckable(True)
+        add_comment_action = QAction(QIcon(f"{ICONS_PATH}/comment.png"), "Add Comment", self)
+        add_comment_action.setCheckable(True)
+        add_transition_action = QAction(QIcon(f"{ICONS_PATH}/nodes.png"), "Add Transition", self)
+        add_transition_action.setCheckable(True)
+
+        control_group.addAction(add_state_action)
+        control_group.addAction(add_initial_state_action)
+        control_group.addAction(add_accepting_state_action)
+        control_group.addAction(add_comment_action)
+        control_group.addAction(add_transition_action)
+
+        undo_action = QAction(QIcon(f"{ICONS_PATH}/undo.png"), "Undo", self)
+        redo_action = QAction(QIcon(f"{ICONS_PATH}/redo.png"), "Redo", self)
+
+        toolbar.addAction(save_action)
+        toolbar.addAction(open_file_action)
+
+        toolbar.addSeparator()
+
+        toolbar.addAction(add_state_action)
+        toolbar.addAction(add_initial_state_action)
+        toolbar.addAction(add_accepting_state_action)
+        toolbar.addAction(add_comment_action)
+        toolbar.addAction(add_transition_action)
+
+        toolbar.addSeparator()
+
+        toolbar.addAction(undo_action)
+        toolbar.addAction(redo_action)
+
+        toolbar.setIconSize(QSize(18, 18))
+        toolbar.setStyleSheet(TOOLBAR_STYLE)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, toolbar)
+
 
     def _create_docks(self):
         elements_dock = Elements(self)
@@ -52,3 +100,18 @@ class MainWindow(QMainWindow):
         self.canvas = CanvasView(self)
         self.setCentralWidget(self.canvas)
 
+
+
+TOOLBAR_STYLE = """
+QToolBar {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 5px;
+    spacing: 10px;
+}
+
+QToolBar::separator {
+    width: 1px;
+    background-color: #ccc;
+}
+"""
