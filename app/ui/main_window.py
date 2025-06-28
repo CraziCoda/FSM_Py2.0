@@ -38,7 +38,8 @@ class MainWindow(QMainWindow):
         elements_dock = Elements(self)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, elements_dock)
 
-        console_dock = ConsoleDock(self)
+        console_dock = ConsoleDock(self)        
+
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock)
 
     def _create_central_widget(self):
