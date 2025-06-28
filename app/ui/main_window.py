@@ -10,6 +10,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("FSM V2.0")
+        self.logger = ActivityLogger()
+
 
         self._create_menu_bar()
         self._create_toolbar()
@@ -41,8 +43,8 @@ class MainWindow(QMainWindow):
         elements_dock = Elements(self)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, elements_dock)
 
-        console_dock = ConsoleDock(self)        
-        self.logger = ActivityLogger(console_dock)
+        console_dock = ConsoleDock(self)    
+        self.logger.setConsoleDock(console_dock)    
 
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock)
 

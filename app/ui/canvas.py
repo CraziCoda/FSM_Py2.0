@@ -2,11 +2,13 @@ from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
 from PyQt5.QtCore import QRectF, Qt, QPointF
 from PyQt5.QtGui import QPainter, QPen
 from app.ui.items.state import StateItem
+from app.core.commands import *
 
 
 class CanvasView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.command_manager = CommandManager(parent.logger)
 
         self.scene: QGraphicsScene = QGraphicsScene(self)
         self.setScene(self.scene)
@@ -56,14 +58,20 @@ class CanvasView(QGraphicsView):
             if text == "Add State":
                 state = StateItem("State")
                 state.setPos(pos)
-                self.scene.addItem(state)
+
+                command = AddStateCommand(state, self.scene)
+                self.command_manager.execute(command)
             elif text == "Add Initial State":
                 state = StateItem("State", is_initial=True)
                 state.setPos(pos)
-                self.scene.addItem(state)
+                
+                command = AddStateCommand(state, self.scene)
+                self.command_manager.execute(command)
             elif text == "Add Accepting State":
                 state = StateItem("State", is_accepting=True)
                 state.setPos(pos)
-                self.scene.addItem(state)
+                
+                command = AddStateCommand(state, self.scene)
+                self.command_manager.execute(command)
             
 
