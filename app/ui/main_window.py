@@ -3,6 +3,7 @@ from PyQt5.QtCore import QSize, Qt
 from app.ui.docks.elements import Elements
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
+from app.core.logger import ActivityLogger
 
 
 class MainWindow(QMainWindow):
@@ -15,6 +16,8 @@ class MainWindow(QMainWindow):
         self._create_central_widget()
         self._create_docks()
         self.showMaximized()
+
+        self.logger.log("Application started", self.__class__.__name__)
 
     
     def _create_menu_bar(self):
@@ -39,6 +42,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, elements_dock)
 
         console_dock = ConsoleDock(self)        
+        self.logger = ActivityLogger(console_dock)
 
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock)
 
