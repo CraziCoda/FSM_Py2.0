@@ -25,9 +25,9 @@ class Elements(QDockWidget):
         list_widget.setItemAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         items = [
-            ("Add State", f"{ICONS_PATH}/plus.png"),
-            ("Add Initial State", f"{ICONS_PATH}/plus.png"),
-            ("Add Accepting State", f"{ICONS_PATH}/check-mark.png"),
+            ("Add State", f"{ICONS_PATH}/add.png"),
+            ("Add Initial State", f"{ICONS_PATH}/input.png"),
+            ("Add Accepting State", f"{ICONS_PATH}/accept.png"),
             ("Add Comments", f"{ICONS_PATH}/comment.png"),
         ]
 
@@ -57,7 +57,7 @@ class DraggableListWidget(QListWidget):
         if item:
             mime = QMimeData()
             mime.setText(item.text())
-            
+
             drag = QDrag(self)
             drag.setMimeData(mime)
             drag.exec_(Qt.DropAction.CopyAction)
@@ -97,5 +97,6 @@ QListWidget::item {
     border: 1px solid #76b5c5;
     border-radius: 5px;
     margin-bottom: 10px;
+    padding-left: 10px;
 }
 """
