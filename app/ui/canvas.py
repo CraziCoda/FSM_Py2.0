@@ -77,27 +77,39 @@ class CanvasView(QGraphicsView):
 
     def mousePressEvent(self, event):
         self.selected_tool = self.parent().getSelectedTool()
-        
-        if event.button() == Qt.MouseButton.LeftButton:
+
+        pos = self.mapToScene(event.pos())
+        item = self.scene.itemAt(pos, self.scene.views()[0].transform())
+
+        if event.button() == Qt.MouseButton.LeftButton and item is None:
             if self.selected_tool == "add_state":
                 state = StateItem("State")
-                state.setPos(self.mapToScene(event.pos()))
+                state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene)
                 self.command_manager.execute(command)
             elif self.selected_tool == "add_initial_state":
                 state = StateItem("State", is_initial=True)
-                state.setPos(self.mapToScene(event.pos()))
+                state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene)
                 self.command_manager.execute(command)
             elif self.selected_tool == "add_accepting_state":
                 state = StateItem("State", is_accepting=True)
-                state.setPos(self.mapToScene(event.pos()))
+                state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene)
                 self.command_manager.execute(command)
 
+        if event.button() == Qt.MouseButton.LeftButton and item is not None:
+            if isinstance(item, StateItem):
+                if self.selected_tool == "add_initial_state":
+                    command = ToggleInitialStateCommand(item, self.scene)
+                    self.command_manager.execute(command)
+                elif self.selected_tool == "add_accepting_state":
+                    command = ToggleAcceptingStateCommand(item, self.scene)
+                    self.command_manager.execute(command)
+                    
         return super().mousePressEvent(event)
             
 

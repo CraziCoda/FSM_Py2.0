@@ -14,6 +14,12 @@ class BaseCommand:
     def execute(self):
         pass
 
+    def undo(self):
+        pass
+
+    def redo(self):
+        pass
+
 
 class CommandManager:
     def __init__(self, logger: ActivityLogger):
@@ -59,6 +65,51 @@ class AddStateCommand(BaseCommand):
 
     def undo(self):
         self.scene.removeItem(self.state)
+
+    def redo(self):
+        self.execute()
+
+
+class ToggleInitialStateCommand(BaseCommand):
+    def __init__(self, state: StateItem, scene: QGraphicsScene):
+        super().__init__()
+        self.state: StateItem = state
+        self.scene: QGraphicsScene = scene
+        self.calling_class = scene.__class__.__name__
+
+        self.logging_level = "INFO"
+        self.log = f"Set state: {self.state.name} is_initial: {not self.state.is_initial}"
+
+    def execute(self):
+        self.state.is_initial = not self.state.is_initial
+        self.state.update()
+
+    def undo(self):
+        self.state.is_initial = not self.state.is_initial
+        self.state.update()
+
+    def redo(self):
+        self.execute()
+
+
+class ToggleAcceptingStateCommand(BaseCommand):
+    def __init__(self, state: StateItem, scene: QGraphicsScene):
+        super().__init__()
+        self.state: StateItem = state
+        self.scene: QGraphicsScene = scene
+        self.calling_class = scene.__class__.__name__
+
+        self.logging_level = "INFO"
+        self.log = f"Set state: {self.state.name} is_accepting: {not self.state.is_accepting}"
+
+    def execute(self):
+        self.state.is_accepting = not self.state.is_accepting
+        self.state.update()
+
+
+    def undo(self):
+        self.state.is_accepting = not self.state.is_accepting
+        self.state.update()
 
     def redo(self):
         self.execute()
