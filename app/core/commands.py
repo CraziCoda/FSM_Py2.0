@@ -17,8 +17,8 @@ class BaseCommand:
 
 class CommandManager:
     def __init__(self, logger: ActivityLogger):
-        self.undo_stack = []
-        self.redo_stack = []
+        self.undo_stack: list[BaseCommand] = []
+        self.redo_stack: list[BaseCommand] = []
         self.logger = logger
 
     def execute(self, command: BaseCommand):
@@ -26,6 +26,22 @@ class CommandManager:
         self.undo_stack.append(command)
         self.logger.log(f"Command executed: {command.log}",
                         command.calling_class, command.logging_level)
+        
+    def undo(self):
+        if len(self.undo_stack) > 0:
+            command = self.undo_stack.pop()
+            command.undo()
+            self.redo_stack.append(command)
+            self.logger.log(f"Command undone: {command.log}",
+                            command.calling_class, command.logging_level)
+
+    def redo(self):
+        if len(self.redo_stack) > 0:
+            command = self.redo_stack.pop()
+            command.redo()
+            self.undo_stack.append(command)
+            self.logger.log(f"Command redone: {command.log}",
+                            command.calling_class, command.logging_level)
 
 
 class AddStateCommand(BaseCommand):
