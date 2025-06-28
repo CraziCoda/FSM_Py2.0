@@ -18,10 +18,9 @@ class CanvasView(QGraphicsView):
         self.gridPen = QPen(Qt.GlobalColor.gray)
         self.gridPen.setWidth(2)
 
+        self.setAcceptDrops(True)
+        self.viewport().setAcceptDrops(True)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-
-        self.add_state("initial", is_initial=False, is_accepting=True)
-
     
     def drawBackground(self, painter, rect):
         super().drawBackground(painter, rect)
@@ -40,7 +39,31 @@ class CanvasView(QGraphicsView):
             painter.drawPoint(point)
 
 
-    def add_state(self, name, is_initial=False, is_accepting=False):
-        state = StateItem(name, is_initial, is_accepting)
-        self.scene.addItem(state)
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+            
+    def dragMoveEvent(self, event):
+        event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasText():
+            text = event.mimeData().text()
+            event.acceptProposedAction()
+
+            pos  = self.mapToScene(event.pos())
+
+            if text == "Add State":
+                state = StateItem("State")
+                state.setPos(pos)
+                self.scene.addItem(state)
+            elif text == "Add Initial State":
+                state = StateItem("State", is_initial=True)
+                state.setPos(pos)
+                self.scene.addItem(state)
+            elif text == "Add Accepting State":
+                state = StateItem("State", is_accepting=True)
+                state.setPos(pos)
+                self.scene.addItem(state)
+            
 
