@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
 from PyQt5.QtCore import QRectF, Qt, QPointF
 from PyQt5.QtGui import QPainter, QPen
+from app.ui.items.state import StateItem
 
 
 class CanvasView(QGraphicsView):
@@ -16,6 +17,10 @@ class CanvasView(QGraphicsView):
         self.gridSpacing = 50
         self.gridPen = QPen(Qt.GlobalColor.gray)
         self.gridPen.setWidth(2)
+
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+        self.add_state("initial", is_initial=False, is_accepting=True)
 
     
     def drawBackground(self, painter, rect):
@@ -33,4 +38,9 @@ class CanvasView(QGraphicsView):
         painter.setPen(self.gridPen)
         for point in points:
             painter.drawPoint(point)
+
+
+    def add_state(self, name, is_initial=False, is_accepting=False):
+        state = StateItem(name, is_initial, is_accepting)
+        self.scene.addItem(state)
 
