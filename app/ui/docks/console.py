@@ -7,17 +7,17 @@ class ConsoleDock(QDockWidget):
 
         tabs = QTabWidget()
         self.log_text = QTextEdit()
-        self.debug_text = QTextEdit()
+        self.validation_issue = QTextEdit()
 
-        for box in (self.log_text, self.debug_text):
+        for box in (self.log_text, self.validation_issue):
             box.setReadOnly(True)
 
         tabs.addTab(self.log_text, "Logs")
-        tabs.addTab(self.debug_text, "Validation")
+        tabs.addTab(self.validation_issue, "Validation")
 
         tabs.setTabPosition(QTabWidget.TabPosition.South)
 
         self.setWidget(tabs)
 
     def append_log(self, text): self.log_text.append(text)
-    def append_debug(self, text): self.debug_text.append(text)
+    def append_validation(self, text): self.validation_issue.append(text)

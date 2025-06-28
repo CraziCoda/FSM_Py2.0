@@ -1,0 +1,1 @@
+ICONS_PATH = "app/ui/resources/icons/"
