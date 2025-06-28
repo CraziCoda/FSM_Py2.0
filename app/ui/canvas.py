@@ -9,6 +9,7 @@ class CanvasView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.command_manager = CommandManager(parent.logger)
+        self.selected_tool: str = parent.getSelectedTool()
 
         self.scene: QGraphicsScene = QGraphicsScene(self)
         self.setScene(self.scene)
@@ -73,5 +74,30 @@ class CanvasView(QGraphicsView):
                 
                 command = AddStateCommand(state, self.scene)
                 self.command_manager.execute(command)
+
+    def mousePressEvent(self, event):
+        self.selected_tool = self.parent().getSelectedTool()
+        
+        if event.button() == Qt.MouseButton.LeftButton:
+            if self.selected_tool == "add_state":
+                state = StateItem("State")
+                state.setPos(self.mapToScene(event.pos()))
+
+                command = AddStateCommand(state, self.scene)
+                self.command_manager.execute(command)
+            elif self.selected_tool == "add_initial_state":
+                state = StateItem("State", is_initial=True)
+                state.setPos(self.mapToScene(event.pos()))
+
+                command = AddStateCommand(state, self.scene)
+                self.command_manager.execute(command)
+            elif self.selected_tool == "add_accepting_state":
+                state = StateItem("State", is_accepting=True)
+                state.setPos(self.mapToScene(event.pos()))
+
+                command = AddStateCommand(state, self.scene)
+                self.command_manager.execute(command)
+
+        return super().mousePressEvent(event)
             
 

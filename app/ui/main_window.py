@@ -13,7 +13,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("FSM V2.0")
         self.logger = ActivityLogger()
-
+        self.selected_tool: str = ""
 
         self._create_menu_bar()
         self._create_toolbar()
@@ -48,14 +48,24 @@ class MainWindow(QMainWindow):
         
         add_state_action = QAction(QIcon(f"{ICONS_PATH}/add.png"), "Add State", self)
         add_state_action.setCheckable(True)
+        add_state_action.triggered.connect(lambda: self._set_selected_tool("add_state"))
+
         add_initial_state_action = QAction(QIcon(f"{ICONS_PATH}/input.png"), "Add Initial State", self)
         add_initial_state_action.setCheckable(True)
+        add_initial_state_action.triggered.connect(lambda: self._set_selected_tool("add_initial_state"))
+
         add_accepting_state_action = QAction(QIcon(f"{ICONS_PATH}/accept.png"), "Add Accepting State", self)
         add_accepting_state_action.setCheckable(True)
+        add_accepting_state_action.triggered.connect(lambda: self._set_selected_tool("add_accepting_state"))
+
         add_comment_action = QAction(QIcon(f"{ICONS_PATH}/comment.png"), "Add Comment", self)
         add_comment_action.setCheckable(True)
+        add_comment_action.triggered.connect(lambda: self._set_selected_tool("add_comment"))
+
         add_transition_action = QAction(QIcon(f"{ICONS_PATH}/nodes.png"), "Add Transition", self)
         add_transition_action.setCheckable(True)
+        add_transition_action.triggered.connect(lambda: self._set_selected_tool("add_transition"))
+
 
         control_group.addAction(add_state_action)
         control_group.addAction(add_initial_state_action)
@@ -99,6 +109,12 @@ class MainWindow(QMainWindow):
     def _create_central_widget(self):
         self.canvas = CanvasView(self)
         self.setCentralWidget(self.canvas)
+
+    def _set_selected_tool(self, tool: str):
+        self.selected_tool = tool
+
+    def getSelectedTool(self):
+        return self.selected_tool
 
 
 
