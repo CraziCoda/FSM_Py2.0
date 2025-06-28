@@ -36,6 +36,9 @@ class Elements(QDockWidget):
             list_item.setSizeHint(QSize(50, 60))
             list_widget.addItem(list_item)
 
+
+        group_box.setAlignment(Qt.AlignmentFlag.AlignTop)
+
         
         list_widget.setStyleSheet(LIST_WIDGET_STYLE_SHEET)        
         group_box.setStyleSheet(GROUP_BOX_STYLE_SHEET)
