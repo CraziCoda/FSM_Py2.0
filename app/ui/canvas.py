@@ -130,6 +130,7 @@ class CanvasView(QGraphicsView):
                         center = self.mapToScene(event.pos())
                         self.temp_line = self.scene.addLine(QLineF(center, center), QPen(Qt.GlobalColor.black, 2, Qt.PenStyle.DashLine))
 
+        return super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.temp_line and self.starting_state:

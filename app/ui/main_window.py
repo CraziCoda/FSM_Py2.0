@@ -45,6 +45,11 @@ class MainWindow(QMainWindow):
         control_group = QActionGroup(self)
         control_group.setExclusive(True)
 
+
+        move_action = QAction(QIcon(f"{ICONS_PATH}/move.png"), "Move", self)
+        move_action.setCheckable(True)
+        move_action.setChecked(True)
+        move_action.triggered.connect(lambda: self._set_selected_tool("move"))
         
         add_state_action = QAction(QIcon(f"{ICONS_PATH}/add.png"), "Add State", self)
         add_state_action.setCheckable(True)
@@ -67,6 +72,7 @@ class MainWindow(QMainWindow):
         add_transition_action.triggered.connect(lambda: self._set_selected_tool("add_transition"))
 
 
+        control_group.addAction(move_action)
         control_group.addAction(add_state_action)
         control_group.addAction(add_initial_state_action)
         control_group.addAction(add_accepting_state_action)
@@ -81,11 +87,7 @@ class MainWindow(QMainWindow):
 
         toolbar.addSeparator()
 
-        toolbar.addAction(add_state_action)
-        toolbar.addAction(add_initial_state_action)
-        toolbar.addAction(add_accepting_state_action)
-        toolbar.addAction(add_comment_action)
-        toolbar.addAction(add_transition_action)
+        toolbar.addActions(control_group.actions())
 
         toolbar.addSeparator()
 
