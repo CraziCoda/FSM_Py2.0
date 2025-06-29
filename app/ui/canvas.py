@@ -130,6 +130,14 @@ class CanvasView(QGraphicsView):
                         center = self.mapToScene(event.pos())
                         self.temp_line = self.scene.addLine(QLineF(center, center), QPen(Qt.GlobalColor.black, 2, Qt.PenStyle.DashLine))
                     return
+                
+                elif self.selected_tool == "loop_transition":
+                    transition = TransitionItem(item, item)
+
+                    command = AddTransitionCommand(transition, self.scene)
+                    self.command_manager.execute(command)
+                
+            
 
         return super().mousePressEvent(event)
 

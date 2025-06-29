@@ -71,6 +71,9 @@ class MainWindow(QMainWindow):
         add_transition_action.setCheckable(True)
         add_transition_action.triggered.connect(lambda: self._set_selected_tool("add_transition"))
 
+        loop_action = QAction(QIcon(f"{ICONS_PATH}/loop.png"), "Loop Transition", self)
+        loop_action.setCheckable(True)
+        loop_action.triggered.connect(lambda: self._set_selected_tool("loop_transition"))
 
         control_group.addAction(move_action)
         control_group.addAction(add_state_action)
@@ -78,6 +81,7 @@ class MainWindow(QMainWindow):
         control_group.addAction(add_accepting_state_action)
         control_group.addAction(add_comment_action)
         control_group.addAction(add_transition_action)
+        control_group.addAction(loop_action)
 
         undo_action = QAction(QIcon(f"{ICONS_PATH}/undo.png"), "Undo", self)
         redo_action = QAction(QIcon(f"{ICONS_PATH}/redo.png"), "Redo", self)

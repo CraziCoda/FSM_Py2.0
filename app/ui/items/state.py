@@ -3,6 +3,7 @@ from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF
 import math
 
+
 class StateItem(QGraphicsItem):
     def __init__(self, name, is_initial=False, is_accepting=False, parent=None):
         super().__init__()
@@ -71,32 +72,43 @@ class TransitionItem(QGraphicsPathItem):
         self.destination.transitions.append(self)
 
     def updatePath(self):
-        p1 = self.source.mapToScene(self.source.boundingRect().center())
-        p2 = self.destination.mapToScene(
-            self.destination.boundingRect().center())
+        if self.source == self.destination:
+            arc_rect = self.source.sceneBoundingRect()
+            arc_rect.setX(arc_rect.x() / 2)
+            arc_rect.setY(arc_rect.y() /2)
 
-        if not hasattr(self, "control_point"):
-            mx = (p1.x() + p2.x()) / 2
-            my = (p1.y() + p2.y()) / 2
+            path = QPainterPath()
+            path.arcMoveTo(arc_rect, 0)
+            path.arcTo(arc_rect, 0, 270)
+            self.setPath(path)
 
-            self.control_point = QPointF(mx, my)
+            self.prepareGeometryChange()
         else:
-            self.control_point = self.control_points_item.scenePos()
+            p1 = self.source.mapToScene(self.source.boundingRect().center())
+            p2 = self.destination.mapToScene(
+                self.destination.boundingRect().center())
 
+            if not hasattr(self, "control_point"):
+                mx = (p1.x() + p2.x()) / 2
+                my = (p1.y() + p2.y()) / 2
 
-        path = QPainterPath(p1)
-        path.quadTo(self.control_point, p2)
-        self.control_points_item.setPos(self.control_point)
-        self.setPath(path)
+                self.control_point = QPointF(mx, my)
+            else:
+                self.control_point = self.control_points_item.scenePos()
 
-        pp = path.pointAtPercent(0.80)
-        dest_vec = QLineF(pp, p2)
-        dest_vec.setLength(dest_vec.length() - self.destination.width / 2)
-        p2_adj = dest_vec.p2()
+            path = QPainterPath(p1)
+            path.quadTo(self.control_point, p2)
+            self.control_points_item.setPos(self.control_point)
+            self.setPath(path)
 
-        # self.drawArrow(self.control_point, p2_adj)
+            pp = path.pointAtPercent(0.80)
+            dest_vec = QLineF(pp, p2)
+            dest_vec.setLength(dest_vec.length() - self.destination.width / 2)
+            p2_adj = dest_vec.p2()
 
-        self.prepareGeometryChange()
+            # self.drawArrow(self.control_point, p2_adj)
+
+            self.prepareGeometryChange()
 
     def paint(self, painter, option, widget=...):
         super().paint(painter, option, widget)
@@ -105,7 +117,6 @@ class TransitionItem(QGraphicsPathItem):
             painter.setBrush(Qt.GlobalColor.black)
             painter.drawPolygon(self.arrow_head)
 
-    
     def drawArrow(self, control, p2_adj):
         line = QLineF(control, p2_adj)
         angle = math.atan2(-(line.dy()), line.dx())
@@ -123,7 +134,6 @@ class TransitionItem(QGraphicsPathItem):
         )
 
         self.arrow_head = QPolygonF([p2, left, right])
-
 
 
 class ControlPointItem(QGraphicsEllipseItem):
