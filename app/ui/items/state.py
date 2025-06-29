@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
-from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF
+from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter
 import math
 
 
@@ -59,7 +59,7 @@ class TransitionItem(QGraphicsPathItem):
         self.destination: StateItem = destination
         self.label = label
 
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
         scene = destination.scene()
         self.control_points_item = ControlPointItem(self)
@@ -73,14 +73,27 @@ class TransitionItem(QGraphicsPathItem):
 
     def updatePath(self):
         if self.source == self.destination:
-            arc_rect = self.source.sceneBoundingRect()
-            arc_rect.setX(arc_rect.x() / 2)
-            arc_rect.setY(arc_rect.y() /2)
+            p2 = self.source.sceneBoundingRect().center()
 
-            path = QPainterPath()
-            path.arcMoveTo(arc_rect, 0)
-            path.arcTo(arc_rect, 0, 270)
-            self.setPath(path)
+            if not hasattr(self, "control_point"):
+                mx = p2.x() - 100
+                my = p2.y()
+
+                self.control_point = QPointF(mx, my)
+                print("self.control_point", self.control_point)
+            else:
+                self.control_point = self.control_points_item.scenePos()
+                
+                if self.control_point.x() == 0 and self.control_point.y() == 0:
+                    return
+
+            circle_rect = self.circle_from_two_points(p2, self.control_point)
+
+            painter = QPainterPath()
+            painter.addEllipse(circle_rect)
+            self.setPath(painter)     
+
+            self.control_points_item.setPos(self.control_point)
 
             self.prepareGeometryChange()
         else:
@@ -101,40 +114,23 @@ class TransitionItem(QGraphicsPathItem):
             self.control_points_item.setPos(self.control_point)
             self.setPath(path)
 
-            pp = path.pointAtPercent(0.80)
-            dest_vec = QLineF(pp, p2)
-            dest_vec.setLength(dest_vec.length() - self.destination.width / 2)
-            p2_adj = dest_vec.p2()
-
-            # self.drawArrow(self.control_point, p2_adj)
-
             self.prepareGeometryChange()
 
     def paint(self, painter, option, widget=...):
         super().paint(painter, option, widget)
 
-        if hasattr(self, "arrow_head"):
-            painter.setBrush(Qt.GlobalColor.black)
-            painter.drawPolygon(self.arrow_head)
 
-    def drawArrow(self, control, p2_adj):
-        line = QLineF(control, p2_adj)
-        angle = math.atan2(-(line.dy()), line.dx())
+    def circle_from_two_points(self, p1: QPointF, p2: QPointF):
+        center_x = (p1.x() + p2.x()) / 2
+        center_y = (p1.y() + p2.y()) / 2
 
-        arrow_size = 10
+        dx = p2.x() - p1.x()
+        dy = p2.y() - p1.y()
+        radius = math.hypot(dx, dy) / 2
 
-        p2 = p2_adj
-        left = QPointF(
-            p2.x() - arrow_size * math.cos(angle - math.pi / 6),
-            p2.y() + arrow_size * math.sin(angle - math.pi / 6),
-        )
-        right = QPointF(
-            p2.x() - arrow_size * math.cos(angle + math.pi / 6),
-            p2.y() + arrow_size * math.sin(angle + math.pi / 6),
-        )
-
-        self.arrow_head = QPolygonF([p2, left, right])
-
+        rect = QRectF(center_x - radius, center_y - radius,
+                    2 * radius, 2 * radius)
+        return rect
 
 class ControlPointItem(QGraphicsEllipseItem):
     def __init__(self, parent: TransitionItem = None):
