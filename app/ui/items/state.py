@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem
-from PyQt5.QtCore import QRectF, Qt, QPointF
-from PyQt5.QtGui import QPen, QBrush, QPainterPath
-
+from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
+from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF
+import math
 
 class StateItem(QGraphicsItem):
     def __init__(self, name, is_initial=False, is_accepting=False, parent=None):
@@ -83,16 +83,47 @@ class TransitionItem(QGraphicsPathItem):
         else:
             self.control_point = self.control_points_item.scenePos()
 
+
         path = QPainterPath(p1)
         path.quadTo(self.control_point, p2)
         self.control_points_item.setPos(self.control_point)
-
-
         self.setPath(path)
+
+        pp = path.pointAtPercent(0.80)
+        dest_vec = QLineF(pp, p2)
+        dest_vec.setLength(dest_vec.length() - self.destination.width / 2)
+        p2_adj = dest_vec.p2()
+
+        # self.drawArrow(self.control_point, p2_adj)
+
         self.prepareGeometryChange()
 
     def paint(self, painter, option, widget=...):
         super().paint(painter, option, widget)
+
+        if hasattr(self, "arrow_head"):
+            painter.setBrush(Qt.GlobalColor.black)
+            painter.drawPolygon(self.arrow_head)
+
+    
+    def drawArrow(self, control, p2_adj):
+        line = QLineF(control, p2_adj)
+        angle = math.atan2(-(line.dy()), line.dx())
+
+        arrow_size = 10
+
+        p2 = p2_adj
+        left = QPointF(
+            p2.x() - arrow_size * math.cos(angle - math.pi / 6),
+            p2.y() + arrow_size * math.sin(angle - math.pi / 6),
+        )
+        right = QPointF(
+            p2.x() - arrow_size * math.cos(angle + math.pi / 6),
+            p2.y() + arrow_size * math.sin(angle + math.pi / 6),
+        )
+
+        self.arrow_head = QPolygonF([p2, left, right])
+
 
 
 class ControlPointItem(QGraphicsEllipseItem):
