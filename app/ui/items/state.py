@@ -1,11 +1,12 @@
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsScene
-from PyQt5.QtCore import QRectF, Qt, QLineF
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem
+from PyQt5.QtCore import QRectF, Qt, QPointF
 from PyQt5.QtGui import QPen, QBrush, QPainterPath
 
 
 class StateItem(QGraphicsItem):
     def __init__(self, name, is_initial=False, is_accepting=False, parent=None):
         super().__init__()
+        self.transitions = []
 
         # State properties
         self.name = name
@@ -20,8 +21,8 @@ class StateItem(QGraphicsItem):
         self.brush = QBrush()
 
         self.setFlags(
-            QGraphicsItem.GraphicsItemFlag.ItemIsMovable
-            | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
+            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
 
         self.setAcceptHoverEvents(True)
@@ -43,38 +44,69 @@ class StateItem(QGraphicsItem):
 
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.name)
 
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
+            for transition in self.transitions:
+                transition.updatePath()
+        return super().itemChange(change, value)
+
 
 class TransitionItem(QGraphicsPathItem):
-    def __init__(self, source: StateItem, destination: StateItem, label = "", parent=None):
+    def __init__(self, source: StateItem, destination: StateItem, label="", parent=None):
         super().__init__(parent)
         self.source: StateItem = source
         self.destination: StateItem = destination
         self.label = label
 
-
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+
+        scene = destination.scene()
+        self.control_points_item = ControlPointItem(self)
+        self.control_points_item.setZValue(1)
+        scene.addItem(self.control_points_item)
 
         self.updatePath()
 
+        self.source.transitions.append(self)
+        self.destination.transitions.append(self)
+
     def updatePath(self):
         p1 = self.source.mapToScene(self.source.boundingRect().center())
-        p2 = self.destination.mapToScene(self.destination.boundingRect().center())
+        p2 = self.destination.mapToScene(
+            self.destination.boundingRect().center())
 
-        path = QPainterPath()
-        path.moveTo(p1)
-        path.lineTo(p2)
-        
+        if not hasattr(self, "control_point"):
+            mx = (p1.x() + p2.x()) / 2
+            my = (p1.y() + p2.y()) / 2
+
+            self.control_point = QPointF(mx, my)
+        else:
+            self.control_point = self.control_points_item.scenePos()
+
+        path = QPainterPath(p1)
+        path.quadTo(self.control_point, p2)
+        self.control_points_item.setPos(self.control_point)
+
 
         self.setPath(path)
         self.prepareGeometryChange()
 
-
-    def paint(self, painter, option, widget = ...):
+    def paint(self, painter, option, widget=...):
         super().paint(painter, option, widget)
 
 
+class ControlPointItem(QGraphicsEllipseItem):
+    def __init__(self, parent: TransitionItem = None):
+        super().__init__(-5, -5, 10, 10)
 
-        
+        self.setBrush(Qt.GlobalColor.blue)
+        self.setFlags(
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
+            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
+        )
+        self.parent = parent
 
-
-
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
+            self.parent.updatePath()
+        return super().itemChange(change, value)

@@ -129,6 +129,7 @@ class CanvasView(QGraphicsView):
                         self.starting_state = item
                         center = self.mapToScene(event.pos())
                         self.temp_line = self.scene.addLine(QLineF(center, center), QPen(Qt.GlobalColor.black, 2, Qt.PenStyle.DashLine))
+                    return
 
         return super().mousePressEvent(event)
 
