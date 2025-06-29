@@ -5,6 +5,7 @@ from app.ui.docks.elements import Elements
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
 from app.core.logger import ActivityLogger
+from app.core.commands import SaveFSMModelCommand
 from utils.constants import ICONS_PATH
 
 
@@ -40,6 +41,9 @@ class MainWindow(QMainWindow):
         toolbar.setAllowedAreas(Qt.ToolBarArea.AllToolBarAreas)
 
         save_action = QAction(QIcon(f"{ICONS_PATH}/save.png"), "Save", self)
+        save_action.triggered.connect(lambda: self.canvas.command_manager.execute(SaveFSMModelCommand(self.canvas.fsm_model)))
+        save_action.setShortcut("Ctrl+S")
+
         open_file_action = QAction(QIcon(f"{ICONS_PATH}/open-folder.png"), "Open", self)
 
         control_group = QActionGroup(self)

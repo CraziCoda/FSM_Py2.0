@@ -1,13 +1,15 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsLineItem
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPainter, QPen
-from app.ui.items.state import StateItem, TransitionItem
+from app.ui.items.state import StateItem, TransitionItem, FSMModel
 from app.core.commands import *
 
 
 class CanvasView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.fsm_model: FSMModel = FSMModel()
+
         self.command_manager = CommandManager(parent.logger)
         self.selected_tool: str = parent.getSelectedTool()
 
@@ -63,19 +65,19 @@ class CanvasView(QGraphicsView):
                 state = StateItem("State")
                 state.setPos(pos)
 
-                command = AddStateCommand(state, self.scene)
+                command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif text == "Add Initial State":
                 state = StateItem("State", is_initial=True)
                 state.setPos(pos)
                 
-                command = AddStateCommand(state, self.scene)
+                command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif text == "Add Accepting State":
                 state = StateItem("State", is_accepting=True)
                 state.setPos(pos)
                 
-                command = AddStateCommand(state, self.scene)
+                command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
 
     def mousePressEvent(self, event):
@@ -89,19 +91,19 @@ class CanvasView(QGraphicsView):
                 state = StateItem("State")
                 state.setPos(pos)
 
-                command = AddStateCommand(state, self.scene)
+                command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif self.selected_tool == "add_initial_state":
                 state = StateItem("State", is_initial=True)
                 state.setPos(pos)
 
-                command = AddStateCommand(state, self.scene)
+                command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif self.selected_tool == "add_accepting_state":
                 state = StateItem("State", is_accepting=True)
                 state.setPos(pos)
 
-                command = AddStateCommand(state, self.scene)
+                command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
 
         if event.button() == Qt.MouseButton.LeftButton and item is not None:
@@ -117,7 +119,7 @@ class CanvasView(QGraphicsView):
                     if self.starting_state:
                         transition = TransitionItem(self.starting_state, item)
 
-                        command = AddTransitionCommand(transition, self.scene)
+                        command = AddTransitionCommand(transition, self.scene, self.fsm_model)
                         self.command_manager.execute(command)
 
                         self.scene.removeItem(self.temp_line)
@@ -134,7 +136,7 @@ class CanvasView(QGraphicsView):
                 elif self.selected_tool == "loop_transition":
                     transition = TransitionItem(item, item)
 
-                    command = AddTransitionCommand(transition, self.scene)
+                    command = AddTransitionCommand(transition, self.scene, self.fsm_mode)
                     self.command_manager.execute(command)
                 
             

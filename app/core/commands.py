@@ -1,6 +1,8 @@
 from app.core.logger import ActivityLogger
 from PyQt5.QtWidgets import QGraphicsScene
-from app.ui.items.state import StateItem, TransitionItem
+from app.ui.items.state import StateItem, TransitionItem, FSMModel
+from utils.constants import DEFAULT_MODEL_PATH
+import json
 
 
 class BaseCommand:
@@ -51,19 +53,22 @@ class CommandManager:
 
 
 class AddStateCommand(BaseCommand):
-    def __init__(self, state: StateItem, scene: QGraphicsScene):
+    def __init__(self, state: StateItem, scene: QGraphicsScene, model: FSMModel = None):
         super().__init__()
         self.state: StateItem = state
         self.scene: QGraphicsScene = scene
         self.calling_class = scene.__class__.__name__
+        self.model = model
 
         self.logging_level = "INFO"
-        self.log = f"Added state: {self.state.name}, is_initial: {self.state.is_initial}, is_accepting: {self.state.is_accepting}"
+        self.log = f"Added state: {self.state.name}, ID: {self.state.id}"
 
     def execute(self):
+        self.model.add_state(self.state)
         self.scene.addItem(self.state)
 
     def undo(self):
+        self.model.remove_state(self.state)
         self.scene.removeItem(self.state)
 
     def redo(self):
@@ -115,21 +120,50 @@ class ToggleAcceptingStateCommand(BaseCommand):
 
 
 class AddTransitionCommand(BaseCommand):
-    def __init__(self, transition: TransitionItem, scene: QGraphicsScene):
+    def __init__(self, transition: TransitionItem, scene: QGraphicsScene, model: FSMModel = None):
         super().__init__()
 
         self.transition: TransitionItem = transition
         self.scene: QGraphicsScene = scene
         self.calling_class = scene.__class__.__name__
+        self.model = model
 
         self.logging_level = "INFO"
         self.log = f"Added transition: From <b>{self.transition.source.name}</b> to <b>{self.transition.destination.name}</b>"
 
     def execute(self):
+        self.model.add_transition(self.transition)
         self.scene.addItem(self.transition)
 
     def undo(self):
+        self.model.remove_transition(self.transition)
         self.scene.removeItem(self.transition)
 
     def redo(self):
         self.execute()
+
+
+class SaveFSMModelCommand(BaseCommand):
+    def __init__(self, model: FSMModel):
+        super().__init__()
+        self.model = model
+
+        self.logging_level = "INFO"
+        self.log = f"Saved model: {self.model.name}"
+
+    def execute(self):
+        json_data = self.model.to_json()
+
+        if json_data.get("name") == "":
+            json_data["name"] = "model"
+
+        with open(f"{DEFAULT_MODEL_PATH}/{json_data['name']}.json", "w") as f:
+            json.dump(json_data, f, indent=4)
+        
+        self.log = f"Saved model: {json_data['name']}"
+
+    def undo(self):
+        pass
+
+    def redo(self):
+        pass
