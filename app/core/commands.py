@@ -1,6 +1,6 @@
 from app.core.logger import ActivityLogger
 from PyQt5.QtWidgets import QGraphicsScene
-from app.ui.items.state import StateItem
+from app.ui.items.state import StateItem, TransitionItem
 
 
 class BaseCommand:
@@ -32,7 +32,7 @@ class CommandManager:
         self.undo_stack.append(command)
         self.logger.log(f"Command executed: {command.log}",
                         command.calling_class, command.logging_level)
-        
+
     def undo(self):
         if len(self.undo_stack) > 0:
             command = self.undo_stack.pop()
@@ -106,10 +106,30 @@ class ToggleAcceptingStateCommand(BaseCommand):
         self.state.is_accepting = not self.state.is_accepting
         self.state.update()
 
-
     def undo(self):
         self.state.is_accepting = not self.state.is_accepting
         self.state.update()
+
+    def redo(self):
+        self.execute()
+
+
+class AddTransitionCommand(BaseCommand):
+    def __init__(self, transition: TransitionItem, scene: QGraphicsScene):
+        super().__init__()
+
+        self.transition: TransitionItem = transition
+        self.scene: QGraphicsScene = scene
+        self.calling_class = scene.__class__.__name__
+
+        self.logging_level = "INFO"
+        self.log = f"Added transition: From <b>{self.transition.source.name}</b> to <b>{self.transition.destination.name}</b>"
+
+    def execute(self):
+        self.scene.addItem(self.transition)
+
+    def undo(self):
+        self.scene.removeItem(self.transition)
 
     def redo(self):
         self.execute()

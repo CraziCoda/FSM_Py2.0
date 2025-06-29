@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QGraphicsItem
-from PyQt5.QtCore import QRectF, Qt
-from PyQt5.QtGui import QPen, QBrush
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsScene
+from PyQt5.QtCore import QRectF, Qt, QLineF
+from PyQt5.QtGui import QPen, QBrush, QPainterPath
 
 
 class StateItem(QGraphicsItem):
@@ -28,7 +28,7 @@ class StateItem(QGraphicsItem):
 
     def boundingRect(self):
         return QRectF(-self.width/2, -self.height/2, self.width, self.height)
-    
+
     def paint(self, painter, option, widget=None):
         rect = self.boundingRect()
 
@@ -41,7 +41,40 @@ class StateItem(QGraphicsItem):
             painter.setPen(self.innerPen)
             painter.drawRoundedRect(inner, 5, 5)
 
-        
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.name)
+
+
+class TransitionItem(QGraphicsPathItem):
+    def __init__(self, source: StateItem, destination: StateItem, label = "", parent=None):
+        super().__init__(parent)
+        self.source: StateItem = source
+        self.destination: StateItem = destination
+        self.label = label
+
+
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+
+        self.updatePath()
+
+    def updatePath(self):
+        p1 = self.source.mapToScene(self.source.boundingRect().center())
+        p2 = self.destination.mapToScene(self.destination.boundingRect().center())
+
+        path = QPainterPath()
+        path.moveTo(p1)
+        path.lineTo(p2)
+        
+
+        self.setPath(path)
+        self.prepareGeometryChange()
+
+
+    def paint(self, painter, option, widget = ...):
+        super().paint(painter, option, widget)
+
+
+
+        
+
 
 

@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
-from PyQt5.QtCore import QRectF, Qt, QPointF
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsLineItem
+from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPainter, QPen
-from app.ui.items.state import StateItem
+from app.ui.items.state import StateItem, TransitionItem
 from app.core.commands import *
 
 
@@ -13,6 +13,9 @@ class CanvasView(QGraphicsView):
 
         self.scene: QGraphicsScene = QGraphicsScene(self)
         self.setScene(self.scene)
+
+        self.temp_line: QGraphicsLineItem = None
+        self.starting_state: StateItem = None
 
         self.scene.setSceneRect(QRectF(0, 0, 2000, 2000))
         self.setRenderHint(QPainter.RenderHint.Antialiasing, True)
@@ -109,7 +112,31 @@ class CanvasView(QGraphicsView):
                 elif self.selected_tool == "add_accepting_state":
                     command = ToggleAcceptingStateCommand(item, self.scene)
                     self.command_manager.execute(command)
-                    
-        return super().mousePressEvent(event)
+
+                elif self.selected_tool == "add_transition":
+                    if self.starting_state:
+                        transition = TransitionItem(self.starting_state, item)
+
+                        command = AddTransitionCommand(transition, self.scene)
+                        self.command_manager.execute(command)
+
+                        self.scene.removeItem(self.temp_line)
+                        self.starting_state = None
+                        self.temp_line = None
+                        
+                        self.update()
+                    else:
+                        self.starting_state = item
+                        center = self.mapToScene(event.pos())
+                        self.temp_line = self.scene.addLine(QLineF(center, center), QPen(Qt.GlobalColor.black, 2, Qt.PenStyle.DashLine))
+
+
+    def mouseMoveEvent(self, event):
+        if self.temp_line and self.starting_state:
+            p2 = self.mapToScene(event.pos())  - QPointF(10, 10)
+            self.temp_line.setLine(QLineF(self.temp_line.line().p1(), p2))
+
+        return super().mouseMoveEvent(event)
+            
             
 
