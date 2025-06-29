@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
-from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter
+from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor
 import math
 import uuid
 
@@ -19,9 +19,17 @@ class StateItem(QGraphicsItem):
         # Visual properties
         self.width = 100
         self.height = 60
+        self.bg_color = QColor("#abdbe3")
+        self.border_color = QColor("#e28743")
+        self.text_color = QColor("#000000")
+        self.font = 'Arial'
+
+
         self.outerPen = QPen()
         self.innerPen = QPen()
         self.brush = QBrush()
+
+        self.setZValue(1)
 
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
@@ -36,6 +44,12 @@ class StateItem(QGraphicsItem):
     def paint(self, painter, option, widget=None):
         rect = self.boundingRect()
 
+        self.brush.setColor(self.bg_color)
+        self.brush.setStyle(Qt.BrushStyle.SolidPattern)
+        self.outerPen.setColor(self.border_color)
+        self.innerPen.setColor(self.border_color)
+        self.outerPen.setWidth(2)
+
         painter.setPen(self.outerPen)
         painter.setBrush(self.brush)
         painter.drawRoundedRect(rect, 10, 10)
@@ -45,6 +59,7 @@ class StateItem(QGraphicsItem):
             painter.setPen(self.innerPen)
             painter.drawRoundedRect(inner, 5, 5)
 
+        painter.setPen(QPen(self.text_color))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.name)
 
     def itemChange(self, change, value):
@@ -62,6 +77,10 @@ class TransitionItem(QGraphicsPathItem):
         self.source: StateItem = source
         self.destination: StateItem = destination
         self.label = label
+
+        # Visual properties
+        self.width = 2
+        self.color = QColor("#1e81b0")
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
@@ -124,6 +143,10 @@ class TransitionItem(QGraphicsPathItem):
 
     def paint(self, painter, option, widget=...):
         super().paint(painter, option, widget)
+
+        painter.setPen(QPen(self.color, self.width))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(self.path())
 
     def circle_from_two_points(self, p1: QPointF, p2: QPointF):
         center_x = (p1.x() + p2.x()) / 2
@@ -197,6 +220,9 @@ class FSMModel:
                 "properties": {
                     "x": state.pos().x(),
                     "y": state.pos().y(),
+                    "bg_color": state.bg_color.name(),
+                    "border_color": state.border_color.name(),
+                    "text_color": state.text_color.name()
                 }
             }
 
@@ -212,10 +238,12 @@ class FSMModel:
                     "control_point": {
                         "x": transition.control_point.x(),
                         "y": transition.control_point.y(),
-                    }
+                    },
+                    "color": transition.color.name(),
+                    "width": transition.width
                 }
             }
-            
+
             transitions_json.append(transition_json)
 
         model_json["states"] = states_json

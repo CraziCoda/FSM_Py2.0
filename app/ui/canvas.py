@@ -87,6 +87,11 @@ class CanvasView(QGraphicsView):
         item = self.scene.itemAt(pos, self.scene.views()[0].transform())
 
         if event.button() == Qt.MouseButton.LeftButton and item is None:
+            if self.temp_line:
+                self.scene.removeItem(self.temp_line)
+                self.starting_state = None
+                self.temp_line = None
+                
             if self.selected_tool == "add_state":
                 state = StateItem("State")
                 state.setPos(pos)
@@ -136,7 +141,7 @@ class CanvasView(QGraphicsView):
                 elif self.selected_tool == "loop_transition":
                     transition = TransitionItem(item, item)
 
-                    command = AddTransitionCommand(transition, self.scene, self.fsm_mode)
+                    command = AddTransitionCommand(transition, self.scene, self.fsm_model)
                     self.command_manager.execute(command)
                 
             
