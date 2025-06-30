@@ -24,7 +24,6 @@ class StateItem(QGraphicsItem):
         self.text_color = QColor("#000000")
         self.font = 'Arial'
 
-
         self.outerPen = QPen()
         self.innerPen = QPen()
         self.brush = QBrush()
@@ -65,6 +64,13 @@ class StateItem(QGraphicsItem):
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             for transition in self.transitions:
+                diff = value - self.pos()
+
+                if transition.source == transition.destination:
+                    transition.control_points_item\
+                        .setPos(transition.control_point + diff)
+                    # transition.updatePath()
+                    continue
                 transition.updatePath()
         return super().itemChange(change, value)
 
@@ -104,17 +110,17 @@ class TransitionItem(QGraphicsPathItem):
 
                 self.control_point = QPointF(mx, my)
             else:
-                if self.control_points_item.scenePos().x() == 0 and self.control_points_item.scenePos().y() == 0:
+                if self.control_points_item.pos().x() == 0 and self.control_points_item.pos().y() == 0:
                     return
-                self.control_point = self.control_points_item.scenePos()
+                self.control_point = self.control_points_item.pos()
 
             circle_rect = self.circle_from_two_points(p2, self.control_point)
+
+            self.control_points_item.setPos(self.control_point)
 
             painter = QPainterPath()
             painter.addEllipse(circle_rect)
             self.setPath(painter)
-
-            self.control_points_item.setPos(self.control_point)
 
             self.prepareGeometryChange()
         else:
@@ -128,16 +134,15 @@ class TransitionItem(QGraphicsPathItem):
 
                 self.control_point = QPointF(mx, my)
             else:
-                if self.control_points_item.scenePos().x() == 0 and self.control_points_item.scenePos().y() == 0:
+                if self.control_points_item.pos().x() == 0 and self.control_points_item.pos().y() == 0:
                     return
-                self.control_point = self.control_points_item.scenePos()
+                self.control_point = self.control_points_item.pos()
 
             path = QPainterPath(p1)
             path.quadTo(self.control_point, p2)
             self.setPath(path)
 
             self.control_points_item.setPos(self.control_point)
-
 
             self.prepareGeometryChange()
 
