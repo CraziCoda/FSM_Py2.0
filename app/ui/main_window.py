@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QActionGroup, QFrame
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from app.ui.docks.elements import Elements
+from app.ui.docks.properties import ItemProperties
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
 from app.core.logger import ActivityLogger
@@ -110,6 +111,9 @@ class MainWindow(QMainWindow):
     def _create_docks(self):
         elements_dock = Elements(self)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, elements_dock)
+
+        self.properties_dock = ItemProperties(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.properties_dock)
 
         console_dock = ConsoleDock(self)    
         self.logger.setConsoleDock(console_dock)    

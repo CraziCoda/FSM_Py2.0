@@ -3,12 +3,18 @@ from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPainter, QPen
 from app.ui.items.state import StateItem, TransitionItem, FSMModel
 from app.core.commands import *
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.ui.main_window import MainWindow
 
 
 class CanvasView(QGraphicsView):
-    def __init__(self, parent=None):
+    def __init__(self, parent: "MainWindow"=None):
         super().__init__(parent)
         self.fsm_model: FSMModel = FSMModel()
+
+        self.parent_window = parent
 
         self.command_manager = CommandManager(parent.logger)
         self.selected_tool: str = parent.getSelectedTool()
@@ -85,6 +91,13 @@ class CanvasView(QGraphicsView):
 
         pos = self.mapToScene(event.pos())
         item = self.scene.itemAt(pos, self.scene.views()[0].transform())
+
+        if item:
+            for obj in self.scene.selectedItems():
+                obj.setSelected(False)
+            item.setSelected(True)
+
+            self.parent_window.properties_dock.show_properties(item)
 
         if event.button() == Qt.MouseButton.LeftButton and item is None:
             if self.temp_line:
