@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor
+from app.ui.dialogs.state_editor import StateEditorDialog
 import math
 import uuid
 
@@ -15,14 +16,17 @@ class StateItem(QGraphicsItem):
         self.name = name
         self.is_initial = is_initial
         self.is_accepting = is_accepting
+        self.comment = ""
 
         # Visual properties
         self.width = 100
         self.height = 60
+
         self.bg_color = QColor("#abdbe3")
         self.border_color = QColor("#e28743")
         self.text_color = QColor("#000000")
         self.font = 'Arial'
+        self.border_width = 2
 
         self.outerPen = QPen()
         self.innerPen = QPen()
@@ -30,15 +34,16 @@ class StateItem(QGraphicsItem):
 
         self.setZValue(1)
 
-        self.setFlags(
-            QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
-            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
-        )
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
 
         self.setAcceptHoverEvents(True)
 
     def boundingRect(self):
-        return QRectF(-self.width/2, -self.height/2, self.width, self.height)
+        r =  QRectF(-self.width/2, -self.height/2, self.width, self.height)
+
+        return r.adjusted(-self.border_width, -self.border_width,
+                   self.border_width, self.border_width)
 
     def paint(self, painter, option, widget=None):
         rect = self.boundingRect()
@@ -47,7 +52,8 @@ class StateItem(QGraphicsItem):
         self.brush.setStyle(Qt.BrushStyle.SolidPattern)
         self.outerPen.setColor(self.border_color)
         self.innerPen.setColor(self.border_color)
-        self.outerPen.setWidth(2)
+
+        self.outerPen.setWidthF(self.border_width)
 
         painter.setPen(self.outerPen)
         painter.setBrush(self.brush)
@@ -73,6 +79,16 @@ class StateItem(QGraphicsItem):
                     continue
                 transition.updatePath()
         return super().itemChange(change, value)
+    
+    def mouseDoubleClickEvent(self, event):
+        dialog = StateEditorDialog(self, parent=self)
+
+        dialog.exec_()
+        return super().mouseDoubleClickEvent(event)
+    
+    def updateUI(self):
+        self.update()
+        self.scene().update()
 
 
 class TransitionItem(QGraphicsPathItem):
