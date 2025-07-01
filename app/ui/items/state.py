@@ -143,7 +143,7 @@ class TransitionItem(QGraphicsPathItem):
             painter = QPainterPath()
             painter.addEllipse(circle_rect)
             self.setPath(painter)
-
+            self.control_points_item.updateUI()
             self.prepareGeometryChange()
         else:
             p1 = self.source.mapToScene(self.source.boundingRect().center())
@@ -165,7 +165,7 @@ class TransitionItem(QGraphicsPathItem):
             self.setPath(path)
 
             self.control_points_item.setPos(self.control_point)
-
+            self.control_points_item.updateUI()
             self.prepareGeometryChange()
 
     def paint(self, painter, option, widget=...):
@@ -198,7 +198,9 @@ class ControlPointItem(QGraphicsEllipseItem):
     def __init__(self, parent: TransitionItem = None):
         super().__init__(-5, -5, 10, 10)
 
-        self.setBrush(Qt.GlobalColor.blue)
+        self.parent = parent
+
+        self.setBrush(parent.control_point_color)
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
             QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
@@ -209,6 +211,9 @@ class ControlPointItem(QGraphicsEllipseItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             self.parent.updatePath()
         return super().itemChange(change, value)
+    
+    def updateUI(self):
+        self.setBrush(self.parent.control_point_color)
 
 
 class FSMModel:
