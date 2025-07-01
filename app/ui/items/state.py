@@ -4,12 +4,16 @@ from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor
 from app.ui.dialogs.state_editor import StateEditorDialog
 import math
 import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.ui.items.state import TransitionItem
 
 
 class StateItem(QGraphicsItem):
     def __init__(self, name, is_initial=False, is_accepting=False, parent=None):
         super().__init__()
-        self.transitions = []
+        self.transitions: list[TransitionItem] = []
 
         # State properties
         self.id = uuid.uuid4().hex
@@ -75,7 +79,6 @@ class StateItem(QGraphicsItem):
                 if transition.source == transition.destination:
                     transition.control_points_item\
                         .setPos(transition.control_point + diff)
-                    # transition.updatePath()
                     continue
                 transition.updatePath()
         return super().itemChange(change, value)
