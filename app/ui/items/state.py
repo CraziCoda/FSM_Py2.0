@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseIt
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor
 from app.ui.dialogs.state_editor import StateEditorDialog
+from app.ui.dialogs.transition_editor import TransitionEditorDialog
+
 import math
 import uuid
 from typing import TYPE_CHECKING
@@ -106,6 +108,7 @@ class TransitionItem(QGraphicsPathItem):
         # Visual properties
         self.width = 2
         self.color = QColor("#1e81b0")
+        self.control_point_color = QColor("#1e81b0")
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
@@ -183,6 +186,12 @@ class TransitionItem(QGraphicsPathItem):
         rect = QRectF(center_x - radius, center_y - radius,
                       2 * radius, 2 * radius)
         return rect
+    
+    def mouseDoubleClickEvent(self, event):
+        dialog = TransitionEditorDialog(self, parent=self)
+
+        dialog.exec_()
+        return super().mouseDoubleClickEvent(event)
 
 
 class ControlPointItem(QGraphicsEllipseItem):
