@@ -84,7 +84,7 @@ class ItemProperties(QDockWidget):
             self.border_width_input.setMinimum(1)
             self.border_width_input.setMaximum(4.5)
             self.border_width_input.setDecimals(1)
-            self.line_width_input.setSingleStep(0.1)
+            self.border_width_input.setSingleStep(0.1)
             self.border_width_input.setValue(item.border_width)
             props_layout.addWidget(border_width_label, 4, 0)
             props_layout.addWidget(self.border_width_input, 4, 1)
