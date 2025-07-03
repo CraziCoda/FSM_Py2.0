@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem, 
+                             QGraphicsItemGroup,  QGraphicsLineItem, QGraphicsPolygonItem)
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor
 from app.ui.dialogs.state_editor import StateEditorDialog
@@ -71,6 +72,31 @@ class StateItem(QGraphicsItem):
             painter.setPen(self.innerPen)
             painter.drawRoundedRect(inner, 5, 5)
 
+        if self.is_initial:
+            start_point = rect.center() - QPointF(self.width/ 2  , 0)
+            end_point = rect.center() - QPointF(self.width/2 - 20, 0)
+
+            self.arrow_line = QLineF(start_point, end_point)
+
+            painter.setPen(self.outerPen)
+            painter.drawLine(self.arrow_line)
+
+            head_size = 12
+            arrow_head = QPolygonF([
+                end_point,
+                QPointF(end_point.x() - head_size, end_point.y() - head_size / 1.5),
+                QPointF(end_point.x() - head_size, end_point.y() + head_size / 1.5)
+            ])
+            self.arrow_head = QGraphicsPolygonItem(arrow_head)
+
+            painter.setPen(self.outerPen)
+            painter.setBrush(self.border_color)
+            painter.drawPolygon(arrow_head)
+        else:
+            # self.arrow.hide()
+            pass
+    
+
         painter.setPen(QPen(self.text_color))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.name)
 
@@ -95,7 +121,7 @@ class StateItem(QGraphicsItem):
     def updateUI(self):
         self.update()
         self.scene().update()
-
+    
 
 class TransitionItem(QGraphicsPathItem):
     def __init__(self, source: StateItem, destination: StateItem, label="", parent=None):
