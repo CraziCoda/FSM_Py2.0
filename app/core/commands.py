@@ -118,6 +118,44 @@ class ToggleAcceptingStateCommand(BaseCommand):
     def redo(self):
         self.execute()
 
+class DeleteCommand(BaseCommand):
+    def __init__(self, item: StateItem | TransitionItem, scene: QGraphicsScene):
+        super().__init__()
+        self.item = item
+        self.scene = scene
+        self.calling_class = scene.__class__.__name__
+
+        self.logging_level = "INFO"
+        if isinstance(item, StateItem):
+            self.log = f"Deleted state: {item.name} with {len(item.transitions)} transitions"
+        elif isinstance(item, TransitionItem):
+            self.log = f"Deleted transition: From <b>{item.source.name}</b> to <b>{item.destination.name}</b>"
+
+    def execute(self):
+        if isinstance(self.item, StateItem):
+            for transition in self.item.transitions:
+                if transition.scene() is not None:
+                    self.scene.removeItem(transition)
+                if transition.control_points_item.scene() is not None:
+                    self.scene.removeItem(transition.control_points_item)
+            self.scene.removeItem(self.item)
+        elif isinstance(self.item, TransitionItem):
+            self.scene.removeItem(self.item.control_points_item)
+            self.scene.removeItem(self.item)
+
+
+    def undo(self):
+        if isinstance(self.item, StateItem):
+            for transition in self.item.transitions:
+                self.scene.addItem(transition.control_points_item)
+                self.scene.addItem(transition)
+            self.scene.addItem(self.item)
+        elif isinstance(self.item, TransitionItem):
+            self.scene.addItem(self.item)
+            self.scene.addItem(self.item.control_points_item)
+
+    def redo(self):
+        self.execute()
 
 class AddTransitionCommand(BaseCommand):
     def __init__(self, transition: TransitionItem, scene: QGraphicsScene, model: FSMModel = None):

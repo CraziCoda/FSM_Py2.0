@@ -24,6 +24,7 @@ class StateItem(QGraphicsItem):
         self.is_initial = is_initial
         self.is_accepting = is_accepting
         self.comment = ""
+        self.is_deleted = False
 
         # Visual properties
         self.width = 100
@@ -131,6 +132,7 @@ class TransitionItem(QGraphicsPathItem):
         self.source: StateItem = source
         self.destination: StateItem = destination
         self.label = label
+        self.is_deleted = False
 
         # Visual properties
         self.width = 2

@@ -72,6 +72,10 @@ class MainWindow(QMainWindow):
         add_comment_action.setCheckable(True)
         add_comment_action.triggered.connect(lambda: self._set_selected_tool("add_comment"))
 
+        delete_action = QAction(QIcon(f"{ICONS_PATH}/delete.png"), "Delete", self)
+        delete_action.setCheckable(True)
+        delete_action.triggered.connect(lambda: self._set_selected_tool("delete"))
+
         add_transition_action = QAction(QIcon(f"{ICONS_PATH}/nodes.png"), "Add Transition", self)
         add_transition_action.setCheckable(True)
         add_transition_action.triggered.connect(lambda: self._set_selected_tool("add_transition"))
@@ -85,6 +89,7 @@ class MainWindow(QMainWindow):
         control_group.addAction(add_initial_state_action)
         control_group.addAction(add_accepting_state_action)
         control_group.addAction(add_comment_action)
+        control_group.addAction(delete_action)
         control_group.addAction(add_transition_action)
         control_group.addAction(loop_action)
 
