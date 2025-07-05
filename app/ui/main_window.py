@@ -17,9 +17,9 @@ class MainWindow(QMainWindow):
         self.logger = ActivityLogger()
         self.selected_tool: str = ""
 
+        self._create_central_widget()
         self._create_menu_bar()
         self._create_toolbar()
-        self._create_central_widget()
         self._create_docks()
         self.showMaximized()
 
@@ -94,7 +94,11 @@ class MainWindow(QMainWindow):
         control_group.addAction(loop_action)
 
         undo_action = QAction(QIcon(f"{ICONS_PATH}/undo.png"), "Undo", self)
+        undo_action.setShortcut("Ctrl+Z")
+        self.canvas.command_manager.set_undo_button(undo_action)
         redo_action = QAction(QIcon(f"{ICONS_PATH}/redo.png"), "Redo", self)
+        redo_action.setShortcut("Ctrl+Y")
+        self.canvas.command_manager.set_redo_button(redo_action)
 
         toolbar.addAction(save_action)
         toolbar.addAction(open_file_action)

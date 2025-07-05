@@ -1,5 +1,5 @@
 from app.core.logger import ActivityLogger
-from PyQt5.QtWidgets import QGraphicsScene
+from PyQt5.QtWidgets import QGraphicsScene, QAction
 from app.ui.items.state import StateItem, TransitionItem, FSMModel
 from utils.constants import DEFAULT_MODEL_PATH
 import json
@@ -28,10 +28,15 @@ class CommandManager:
         self.undo_stack: list[BaseCommand] = []
         self.redo_stack: list[BaseCommand] = []
         self.logger = logger
+        self.redo_button:  QAction | None = None
+        self.undo_button:  QAction | None = None
 
     def execute(self, command: BaseCommand):
         command.execute()
         self.undo_stack.append(command)
+        self.redo_stack.clear()
+        self.redo_button.setEnabled(False)
+        self.undo_button.setEnabled(True)
         self.logger.log(f"Command executed: {command.log}",
                         command.calling_class, command.logging_level)
 
@@ -39,9 +44,12 @@ class CommandManager:
         if len(self.undo_stack) > 0:
             command = self.undo_stack.pop()
             command.undo()
+            self.redo_button.setEnabled(True)
             self.redo_stack.append(command)
             self.logger.log(f"Command undone: {command.log}",
                             command.calling_class, command.logging_level)
+        else:
+            self.undo_button.setEnabled(False)
 
     def redo(self):
         if len(self.redo_stack) > 0:
@@ -50,6 +58,18 @@ class CommandManager:
             self.undo_stack.append(command)
             self.logger.log(f"Command redone: {command.log}",
                             command.calling_class, command.logging_level)
+        else:
+            self.redo_button.setEnabled(False)
+
+    def set_redo_button(self, button: QAction):
+        self.redo_button = button
+        self.redo_button.triggered.connect(self.redo)
+        self.redo_button.setEnabled(False)
+
+    def set_undo_button(self, button):
+        self.undo_button = button
+        self.undo_button.triggered.connect(self.undo)
+        self.undo_button.setEnabled(False)
 
 
 class AddStateCommand(BaseCommand):
@@ -118,6 +138,7 @@ class ToggleAcceptingStateCommand(BaseCommand):
     def redo(self):
         self.execute()
 
+
 class DeleteCommand(BaseCommand):
     def __init__(self, item: StateItem | TransitionItem, scene: QGraphicsScene):
         super().__init__()
@@ -143,7 +164,6 @@ class DeleteCommand(BaseCommand):
             self.scene.removeItem(self.item.control_points_item)
             self.scene.removeItem(self.item)
 
-
     def undo(self):
         if isinstance(self.item, StateItem):
             for transition in self.item.transitions:
@@ -156,6 +176,7 @@ class DeleteCommand(BaseCommand):
 
     def redo(self):
         self.execute()
+
 
 class AddTransitionCommand(BaseCommand):
     def __init__(self, transition: TransitionItem, scene: QGraphicsScene, model: FSMModel = None):
@@ -176,6 +197,8 @@ class AddTransitionCommand(BaseCommand):
     def undo(self):
         self.model.remove_transition(self.transition)
         self.scene.removeItem(self.transition)
+        if self.transition.control_points_item.scene() is not None:
+            self.scene.removeItem(self.transition.control_points_item)
 
     def redo(self):
         self.execute()
@@ -197,7 +220,7 @@ class SaveFSMModelCommand(BaseCommand):
 
         with open(f"{DEFAULT_MODEL_PATH}/{json_data['name']}.json", "w") as f:
             json.dump(json_data, f, indent=4)
-        
+
         self.log = f"Saved model: {json_data['name']}"
 
     def undo(self):
