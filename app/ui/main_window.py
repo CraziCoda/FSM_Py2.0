@@ -41,8 +41,6 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
 
-
-
         edit_menu = menu.addMenu("Edit")
         simulation_menu = menu.addMenu("Simulation")
         view_menu = menu.addMenu("View")
