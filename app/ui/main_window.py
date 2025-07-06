@@ -30,8 +30,22 @@ class MainWindow(QMainWindow):
         menu = self.menuBar()
 
         file_menu = menu.addMenu("File")
+        new_action = QAction("New", self)
+        open_action = QAction("Open", self)
+        save_action = QAction("Save", self)
+        exit_action = QAction("Exit", self)
+
+        file_menu.addAction(new_action)
+        file_menu.addAction(open_action)
+        file_menu.addAction(save_action)
+        file_menu.addSeparator()
+        file_menu.addAction(exit_action)
+
+
+
         edit_menu = menu.addMenu("Edit")
         simulation_menu = menu.addMenu("Simulation")
+        view_menu = menu.addMenu("View")
         tools_menu = menu.addMenu("Tools")
         settings_menu = menu.addMenu("Settings")
 
