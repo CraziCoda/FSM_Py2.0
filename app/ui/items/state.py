@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem, 
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem,
                              QGraphicsItemGroup,  QGraphicsLineItem, QGraphicsPolygonItem)
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor
@@ -43,16 +43,17 @@ class StateItem(QGraphicsItem):
         self.setZValue(1)
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
 
         self.setAcceptHoverEvents(True)
 
     def boundingRect(self):
-        r =  QRectF(-self.width/2, -self.height/2, self.width, self.height)
+        r = QRectF(-self.width/2, -self.height/2, self.width, self.height)
 
         return r.adjusted(-self.border_width, -self.border_width,
-                   self.border_width, self.border_width)
+                          self.border_width, self.border_width)
 
     def paint(self, painter, option, widget=None):
         rect = self.boundingRect()
@@ -74,7 +75,7 @@ class StateItem(QGraphicsItem):
             painter.drawRoundedRect(inner, 5, 5)
 
         if self.is_initial:
-            start_point = rect.center() - QPointF(self.width/ 2  , 0)
+            start_point = rect.center() - QPointF(self.width / 2, 0)
             end_point = rect.center() - QPointF(self.width/2 - 20, 0)
 
             self.arrow_line = QLineF(start_point, end_point)
@@ -85,8 +86,10 @@ class StateItem(QGraphicsItem):
             head_size = 12
             arrow_head = QPolygonF([
                 end_point,
-                QPointF(end_point.x() - head_size, end_point.y() - head_size / 1.5),
-                QPointF(end_point.x() - head_size, end_point.y() + head_size / 1.5)
+                QPointF(end_point.x() - head_size,
+                        end_point.y() - head_size / 1.5),
+                QPointF(end_point.x() - head_size,
+                        end_point.y() + head_size / 1.5)
             ])
             self.arrow_head = QGraphicsPolygonItem(arrow_head)
 
@@ -96,7 +99,6 @@ class StateItem(QGraphicsItem):
         else:
             # self.arrow.hide()
             pass
-    
 
         painter.setPen(QPen(self.text_color))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.name)
@@ -112,17 +114,17 @@ class StateItem(QGraphicsItem):
                     continue
                 transition.updatePath()
         return super().itemChange(change, value)
-    
+
     def mouseDoubleClickEvent(self, event):
         dialog = StateEditorDialog(self, parent=self)
 
         dialog.exec_()
         return super().mouseDoubleClickEvent(event)
-    
+
     def updateUI(self):
         self.update()
         self.scene().update()
-    
+
 
 class TransitionItem(QGraphicsPathItem):
     def __init__(self, source: StateItem, destination: StateItem, label="", parent=None):
@@ -196,6 +198,8 @@ class TransitionItem(QGraphicsPathItem):
             self.control_points_item.setPos(self.control_point)
             self.control_points_item.updateUI()
             self.prepareGeometryChange()
+        
+        self.control_points_item.updateUI()
 
     def paint(self, painter, option, widget=...):
         super().paint(painter, option, widget)
@@ -215,7 +219,7 @@ class TransitionItem(QGraphicsPathItem):
         rect = QRectF(center_x - radius, center_y - radius,
                       2 * radius, 2 * radius)
         return rect
-    
+
     def mouseDoubleClickEvent(self, event):
         dialog = TransitionEditorDialog(self, parent=self)
 
@@ -223,26 +227,60 @@ class TransitionItem(QGraphicsPathItem):
         return super().mouseDoubleClickEvent(event)
 
 
-class ControlPointItem(QGraphicsEllipseItem):
+class ControlPointItem(QGraphicsPolygonItem):
     def __init__(self, parent: TransitionItem = None):
-        super().__init__(-5, -5, 10, 10)
+        super().__init__(parent)
 
+        self.size = 15
         self.parent = parent
 
-        self.setBrush(parent.control_point_color)
+        self.setBrush(self.parent.control_point_color)
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
             QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
-        self.parent = parent
+
+        self.build_arrow_shape()
+        self.point_to_dest()
+
+    def build_arrow_shape(self):
+        """Build a triangle pointing up by default."""
+        s = self.size
+        points = [
+            QPointF(0, -s),           # Tip
+            QPointF(-s / 2, s / 2),   # Bottom left
+            QPointF(0, 0),            # Inner point
+            QPointF(s / 2, s / 2),    # Bottom right
+        ]
+        polygon = QPolygonF(points)
+        self.setPolygon(polygon)
+
+    def point_to_dest(self):
+        target = self.parent.destination
+        
+        if hasattr(self.parent, "control_point"):
+            me = self.parent.control_point
+            dx = target.scenePos().x() - me.x()
+            dy = target.scenePos().y() - me.y()
+        else:
+            me = self.parent.pos()
+            dx = target.scenePos().x() - self.scenePos().x()
+            dy = target.scenePos().y() - self.scenePos().y()
+
+        angle = math.degrees(math.atan2(dy, dx)) + 90
+        self.setRotation(angle)    
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             self.parent.updatePath()
+            self.point_to_dest()
         return super().itemChange(change, value)
-    
+
     def updateUI(self):
+        self.point_to_dest()
         self.setBrush(self.parent.control_point_color)
+
+        
 
 
 class FSMModel:
