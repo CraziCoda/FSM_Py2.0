@@ -1,7 +1,8 @@
 from app.core.logger import ActivityLogger
-from PyQt5.QtWidgets import QGraphicsScene, QAction
+from PyQt5.QtWidgets import QGraphicsScene, QAction, QDialog, QMessageBox
 from app.ui.items.state import StateItem, TransitionItem, FSMModel
 from utils.constants import DEFAULT_MODEL_PATH
+from app.ui.dialogs.save_machine import SaveMachineDialog
 import json
 
 
@@ -216,12 +217,30 @@ class SaveFSMModelCommand(BaseCommand):
         json_data = self.model.to_json()
 
         if json_data.get("name") == "":
-            json_data["name"] = "model"
+            dialog = SaveMachineDialog()
+            if dialog.exec_():
+                path = dialog.get_full_path()
+                if path:
+                    json_data["name"] = dialog.get_name()
+                    with open(path, "w") as f:
+                        json.dump(json_data, f, indent=4)
 
-        with open(f"{DEFAULT_MODEL_PATH}/{json_data['name']}.json", "w") as f:
-            json.dump(json_data, f, indent=4)
+                    self.log = f"Saved model: {json_data['name']}"
+                    self.model.set_name(json_data["name"])
+                    self.model.set_path(path)
+                    QMessageBox.information(None, "Saved", f"File saved to:\n{path}")
+                else:
+                    self.log = f"Unable to save model"
+                    QMessageBox.warning(None, "Invalid Input", "Both folder and file name are required.")
+            else:
+                self.log = f"Cancelled saving model"
 
-        self.log = f"Saved model: {json_data['name']}"
+        else:
+            path = json_data["path"]
+            with open(path, "w") as f:
+                json.dump(json_data, f, indent=4)
+
+            self.log = f"Saved model: {json_data['name']}"
 
     def undo(self):
         pass

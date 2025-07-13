@@ -287,6 +287,7 @@ class FSMModel:
     def __init__(self):
         self.id = uuid.uuid4().hex
         self.name = ""
+        self.path = "./models"
         self.states: list[StateItem] = []
         self.transitions: list[TransitionItem] = []
 
@@ -308,10 +309,17 @@ class FSMModel:
         except ValueError:
             pass
 
+    def set_name(self, name: str):
+        self.name = name
+
+    def set_path(self, path: str):
+        self.path = path
+
     def to_json(self):
         model_json = {
             "id": self.id,
-            "name": self.name
+            "name": self.name,
+            "path": self.path
         }
         states_json = []
         transitions_json = []
