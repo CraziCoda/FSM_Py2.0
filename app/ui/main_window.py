@@ -31,13 +31,15 @@ class MainWindow(QMainWindow):
 
         file_menu = menu.addMenu("File")
         new_action = QAction("New", self)
-        
+
         open_action = QAction("Open", self)
         open_action.triggered.connect(lambda: self.canvas.command_manager.execute(OpenMachine(self.canvas.fsm_model, self.canvas)))
         open_action.setShortcut("Ctrl+O")
 
         save_action = QAction("Save", self)
         exit_action = QAction("Exit", self)
+        exit_action.triggered.connect(self.close)
+        exit_action.setShortcut("Ctrl+Q")
 
         file_menu.addAction(new_action)
         file_menu.addAction(open_action)
