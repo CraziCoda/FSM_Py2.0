@@ -14,12 +14,15 @@ if TYPE_CHECKING:
 
 
 class StateItem(QGraphicsItem):
-    def __init__(self, name, is_initial=False, is_accepting=False, parent=None):
+    def __init__(self, name, is_initial=False, is_accepting=False, id=None, parent=None):
         super().__init__()
         self.transitions: list[TransitionItem] = []
 
         # State properties
-        self.id = uuid.uuid4().hex
+        if id is not None:
+            self.id = id
+        else:
+            self.id = uuid.uuid4().hex
         self.name = name
         self.is_initial = is_initial
         self.is_accepting = is_accepting
@@ -143,15 +146,22 @@ class TransitionItem(QGraphicsPathItem):
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
-        scene = destination.scene()
+        if hasattr(destination, "scene"):
+            scene = destination.scene()
         self.control_points_item = ControlPointItem(self)
         self.control_points_item.setZValue(1)
-        scene.addItem(self.control_points_item)
 
-        self.updatePath()
+        if self.scene() is not None:
+            scene.addItem(self.control_points_item)
+            self.updatePath()
 
         self.source.transitions.append(self)
         self.destination.transitions.append(self)
+
+    def reinit(self):
+        if self.scene() is not None:
+            self.updatePath()
+            self.control_points_item.reinit()
 
     def updatePath(self):
         if self.source == self.destination:
@@ -240,8 +250,14 @@ class ControlPointItem(QGraphicsPolygonItem):
             QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
 
-        self.build_arrow_shape()
-        self.point_to_dest()
+        if self.scene() is not None:
+            self.build_arrow_shape()
+            self.point_to_dest()
+
+    def reinit(self):
+        if self.scene() is not None:
+            self.build_arrow_shape()
+            self.updateUI()
 
     def build_arrow_shape(self):
         """Build a triangle pointing up by default."""
@@ -288,24 +304,29 @@ class FSMModel:
         self.id = uuid.uuid4().hex
         self.name = ""
         self.path = "./models"
+        self.is_saved = True
         self.states: list[StateItem] = []
         self.transitions: list[TransitionItem] = []
 
     def add_state(self, state: StateItem):
         self.states.append(state)
+        self.is_saved = False
 
     def add_transition(self, transition: TransitionItem):
         self.transitions.append(transition)
+        self.is_saved = False
 
     def remove_state(self, state: StateItem):
         try:
             self.states.remove(state)
+            self.is_saved = False
         except ValueError:
             pass
 
     def remove_transition(self, transition: TransitionItem):
         try:
             self.transitions.remove(transition)
+            self.is_saved = False
         except ValueError:
             pass
 
@@ -314,6 +335,9 @@ class FSMModel:
 
     def set_path(self, path: str):
         self.path = path
+
+    def set_is_saved(self, is_saved: bool):
+        self.is_saved = is_saved
 
     def to_json(self):
         model_json = {
@@ -351,6 +375,7 @@ class FSMModel:
                     "control_point": {
                         "x": transition.control_point.x(),
                         "y": transition.control_point.y(),
+                        "color": transition.control_point_color.name()
                     },
                     "color": transition.color.name(),
                     "width": transition.width
@@ -363,3 +388,42 @@ class FSMModel:
         model_json["transitions"] = transitions_json
 
         return model_json
+    
+    def clear(self):
+        for state in self.states:
+            state.scene().removeItem(state)
+
+        for transition in self.transitions:
+            transition.control_points_item.scene().removeItem(transition.control_points_item)
+            transition.scene().removeItem(transition)
+
+        self.states = []
+        self.transitions = []
+        
+    def get_state_by_id(self, state_id):
+        for state in self.states:
+            if state.id == state_id:
+                return state
+    
+    def from_json(self, model_json):
+        self.id = model_json["id"]
+        self.name = model_json["name"]
+        self.is_saved = True
+
+        for state_json in model_json["states"]:
+            state = StateItem(state_json["name"], state_json["is_initial"], state_json["is_accepting"], id=state_json["id"])
+            state.setPos(state_json["properties"]["x"], state_json["properties"]["y"])
+            state.bg_color = QColor(state_json["properties"]["bg_color"])
+            state.border_color = QColor(state_json["properties"]["border_color"])
+            state.text_color = QColor(state_json["properties"]["text_color"])
+            self.add_state(state)
+
+        for transition_json in model_json["transitions"]:
+            source = self.get_state_by_id(transition_json["source"])
+            destination = self.get_state_by_id(transition_json["destination"])
+
+            transition = TransitionItem(source, destination, transition_json["label"])
+            transition.color = QColor(transition_json["properties"]["color"])
+            transition.width = transition_json["properties"]["width"]
+            transition.control_point_color = QColor(transition_json["properties"]["control_point"]["color"])
+            self.add_transition(transition)

@@ -35,6 +35,17 @@ class CanvasView(QGraphicsView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+    def set_new_model(self, model: FSMModel):
+        self.scene.clear()
+        self.fsm_model = model
+
+        for state in self.fsm_model.states:
+            self.scene.addItem(state)
+
+        for transition in self.fsm_model.transitions:
+            self.scene.addItem(transition)
+            transition.reinit()
     
     def drawBackground(self, painter, rect):
         super().drawBackground(painter, rect)

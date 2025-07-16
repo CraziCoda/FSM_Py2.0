@@ -1,9 +1,15 @@
 from app.core.logger import ActivityLogger
-from PyQt5.QtWidgets import QGraphicsScene, QAction, QDialog, QMessageBox
+from PyQt5.QtWidgets import QGraphicsScene, QAction, QFileDialog, QMessageBox
 from app.ui.items.state import StateItem, TransitionItem, FSMModel
 from utils.constants import DEFAULT_MODEL_PATH
 from app.ui.dialogs.save_machine import SaveMachineDialog
 import json
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.ui.main_window import MainWindow
+    from app.ui.canvas import CanvasView
+
 
 
 class BaseCommand:
@@ -229,6 +235,7 @@ class SaveFSMModelCommand(BaseCommand):
                     self.model.set_name(json_data["name"])
                     self.model.set_path(path)
                     QMessageBox.information(None, "Saved", f"File saved to:\n{path}")
+                    self.model.set_is_saved(True)
                 else:
                     self.log = f"Unable to save model"
                     QMessageBox.warning(None, "Invalid Input", "Both folder and file name are required.")
@@ -241,9 +248,41 @@ class SaveFSMModelCommand(BaseCommand):
                 json.dump(json_data, f, indent=4)
 
             self.log = f"Saved model: {json_data['name']}"
+            self.model.set_is_saved(True)
 
     def undo(self):
         pass
 
     def redo(self):
         pass
+
+class OpenMachine(BaseCommand):
+    def __init__(self, existing_machine: FSMModel, canvas: "CanvasView"):
+        super().__init__()
+
+        self.canvas: "CanvasView" = canvas
+
+        self.existing_machine = existing_machine
+
+        self.logging_level = "INFO"
+        self.log = f"Opening cancelled"
+
+    def execute(self):
+        if not self.existing_machine.is_saved:
+            self.log = f"Opening cancelled"
+            QMessageBox.warning(None, "Opening cancelled", "This machine has not been saved yet.")
+
+            return
+        
+        file_dialog = QFileDialog.getOpenFileName(None, "Open Machine", "", "JSON Files (*.json)")
+        if file_dialog[0]:
+            with open(file_dialog[0], "r") as f:
+                json_data = json.load(f)
+
+            
+            new_model = FSMModel()
+            new_model.set_path(file_dialog[0])
+            new_model.from_json(json_data)
+            self.log = f"Opened machine: {new_model.name}"
+
+            self.canvas.set_new_model(new_model)

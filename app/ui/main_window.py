@@ -6,7 +6,7 @@ from app.ui.docks.properties import ItemProperties
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
 from app.core.logger import ActivityLogger
-from app.core.commands import SaveFSMModelCommand
+from app.core.commands import SaveFSMModelCommand, OpenMachine
 from utils.constants import ICONS_PATH
 
 
@@ -58,6 +58,8 @@ class MainWindow(QMainWindow):
         save_action.setShortcut("Ctrl+S")
 
         open_file_action = QAction(QIcon(f"{ICONS_PATH}/open-folder.png"), "Open", self)
+        open_file_action.triggered.connect(lambda: self.canvas.command_manager.execute(OpenMachine(self.canvas.fsm_model, self.canvas)))
+        open_file_action.setShortcut("Ctrl+O")
 
         control_group = QActionGroup(self)
         control_group.setExclusive(True)
