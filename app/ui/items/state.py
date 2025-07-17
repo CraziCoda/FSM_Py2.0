@@ -146,14 +146,11 @@ class TransitionItem(QGraphicsPathItem):
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
-        if self.scene() is not None:
-            scene = source.scene()
-            scene.addItem(self)
         self.control_points_item = ControlPointItem(self)
         self.control_points_item.setZValue(1)
 
         if self.scene() is not None:
-            scene.addItem(self.control_points_item)
+            self.scene().addItem(self.control_points_item)
             self.updatePath()
             self.reinit()
 

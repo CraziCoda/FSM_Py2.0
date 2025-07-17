@@ -167,6 +167,8 @@ class DeleteCommand(BaseCommand):
                     self.scene.removeItem(transition)
                 if transition.control_points_item.scene() is not None:
                     self.scene.removeItem(transition.control_points_item)
+
+                self.model.remove_transition(transition)
             self.scene.removeItem(self.item)
             self.model.remove_state(self.item)
         elif isinstance(self.item, TransitionItem):
@@ -205,6 +207,7 @@ class AddTransitionCommand(BaseCommand):
     def execute(self):
         self.model.add_transition(self.transition)
         self.scene.addItem(self.transition)
+        self.transition.reinit()
 
     def undo(self):
         self.model.remove_transition(self.transition)
@@ -246,10 +249,12 @@ class SaveFSMModelCommand(BaseCommand):
                     QMessageBox.warning(None, "Invalid Input", "Both folder and file name are required.")
             else:
                 self.log = f"Cancelled saving model"
-
         else:
+            json_data = self.model.to_json()
+
             path = json_data["path"]
             with open(path, "w") as f:
+                print(json_data)
                 json.dump(json_data, f, indent=4)
 
             self.log = f"Saved model: {json_data['name']}"
