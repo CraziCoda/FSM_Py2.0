@@ -34,9 +34,10 @@ class MainWindow(QMainWindow):
 
         open_action = QAction("Open", self)
         open_action.triggered.connect(lambda: self.canvas.command_manager.execute(OpenMachine(self.canvas.fsm_model, self.canvas)))
-        open_action.setShortcut("Ctrl+O")
 
         save_action = QAction("Save", self)
+        save_action.triggered.connect(lambda: self.canvas.command_manager.execute(SaveFSMModelCommand(self.canvas.fsm_model)))
+
         exit_action = QAction("Exit", self)
         exit_action.triggered.connect(self.close)
         exit_action.setShortcut("Ctrl+Q")

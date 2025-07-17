@@ -169,12 +169,12 @@ class CanvasView(QGraphicsView):
                     self.command_manager.execute(command)
 
                 elif self.selected_tool == "delete":
-                    command = DeleteCommand(item, self.scene)
+                    command = DeleteCommand(item, self.scene, self.fsm_model)
                     self.command_manager.execute(command)
 
             elif isinstance(item, TransitionItem):
                 if self.selected_tool == "delete":
-                    command = DeleteCommand(item, self.scene)
+                    command = DeleteCommand(item, self.scene, self.fsm_model)
                     self.command_manager.execute(command)
 
 

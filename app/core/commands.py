@@ -147,10 +147,11 @@ class ToggleAcceptingStateCommand(BaseCommand):
 
 
 class DeleteCommand(BaseCommand):
-    def __init__(self, item: StateItem | TransitionItem, scene: QGraphicsScene):
+    def __init__(self, item: StateItem | TransitionItem, scene: QGraphicsScene, model: FSMModel = None):
         super().__init__()
         self.item = item
         self.scene = scene
+        self.model = model
         self.calling_class = scene.__class__.__name__
 
         self.logging_level = "INFO"
@@ -167,9 +168,11 @@ class DeleteCommand(BaseCommand):
                 if transition.control_points_item.scene() is not None:
                     self.scene.removeItem(transition.control_points_item)
             self.scene.removeItem(self.item)
+            self.model.remove_state(self.item)
         elif isinstance(self.item, TransitionItem):
             self.scene.removeItem(self.item.control_points_item)
             self.scene.removeItem(self.item)
+            self.model.remove_transition(self.item)
 
     def undo(self):
         if isinstance(self.item, StateItem):
@@ -177,9 +180,11 @@ class DeleteCommand(BaseCommand):
                 self.scene.addItem(transition.control_points_item)
                 self.scene.addItem(transition)
             self.scene.addItem(self.item)
+            self.model.add_state(self.item)
         elif isinstance(self.item, TransitionItem):
             self.scene.addItem(self.item)
             self.scene.addItem(self.item.control_points_item)
+            self.model.add_transition(self.item)
 
     def redo(self):
         self.execute()
