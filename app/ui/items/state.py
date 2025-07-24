@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem,
-                             QGraphicsItemGroup,  QGraphicsLineItem, QGraphicsPolygonItem)
+                             QGraphicsItemGroup,  QGraphicsTextItem, QGraphicsPolygonItem,
+                             QGraphicsRectItem)
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
-from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor
+from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor, QFont
 from app.ui.dialogs.state_editor import StateEditorDialog
 from app.ui.dialogs.transition_editor import TransitionEditorDialog
 
@@ -130,7 +131,7 @@ class StateItem(QGraphicsItem):
 
 
 class TransitionItem(QGraphicsPathItem):
-    def __init__(self, source: StateItem, destination: StateItem, label="", parent=None):
+    def __init__(self, source: StateItem, destination: StateItem, label="Hello", parent=None):
         super().__init__(parent)
         self.id = uuid.uuid4().hex
 
@@ -149,7 +150,10 @@ class TransitionItem(QGraphicsPathItem):
         self.control_points_item = ControlPointItem(self)
         self.control_points_item.setZValue(1)
 
+        self.label_item = TransitionLabel(self)
+
         if self.scene() is not None:
+            self.scene().addItem(self.label_item)
             self.scene().addItem(self.control_points_item)
             self.updatePath()
             self.reinit()
@@ -183,6 +187,10 @@ class TransitionItem(QGraphicsPathItem):
             painter = QPainterPath()
             painter.addEllipse(circle_rect)
             self.setPath(painter)
+
+            mid_point = self.control_point - self.label_item.boundingRect().center()
+            self.label_item.setPos(mid_point)
+
             self.control_points_item.updateUI()
             self.prepareGeometryChange()
         else:
@@ -203,6 +211,11 @@ class TransitionItem(QGraphicsPathItem):
             path = QPainterPath(p1)
             path.quadTo(self.control_point, p2)
             self.setPath(path)
+
+            mid_point = path.pointAtPercent(0.5)
+            mid_point -= self.label_item.boundingRect().center() 
+
+            self.label_item.setPos(mid_point)
 
             self.control_points_item.setPos(self.control_point)
             self.control_points_item.updateUI()
@@ -295,7 +308,24 @@ class ControlPointItem(QGraphicsPolygonItem):
         self.point_to_dest()
         self.setBrush(self.parent.control_point_color)
 
-        
+class TransitionLabel(QGraphicsItemGroup):
+    def __init__(self, parent: TransitionItem=None):
+        super().__init__(parent)
+
+
+        self.text_item = QGraphicsTextItem()
+        self.text_item.setPlainText(parent.label)
+        self.text_item.setFont(QFont("Arial", 12))
+
+        self.padding = 4
+        self.text_rect = self.text_item.boundingRect().adjusted(-self.padding, -self.padding, self.padding, self.padding)
+
+        self.border_item = QGraphicsRectItem(self.text_rect)
+        self.border_item.setPen(QPen(QColor("#e28743"), 2))
+        self.border_item.setBrush(QColor("#ffffff"))
+
+        self.addToGroup(self.border_item)
+        self.addToGroup(self.text_item)
 
 
 class FSMModel:
