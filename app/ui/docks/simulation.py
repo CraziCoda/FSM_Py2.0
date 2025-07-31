@@ -199,8 +199,8 @@ class SimulationDock(QDockWidget):
         self.current_state = QLabel("Current State: ")
         self.current_state_name = QLabel("None")
 
-        state_status_label = QLabel("Current State: ")
-        self.current_state_name = QLabel("None")
+        # state_status_label = QLabel("Current State: ")
+        # self.current_state_name = QLabel("None")
 
         tick_label = QLabel("Current Tick: ")
         self.current_tick = QLabel("0")
