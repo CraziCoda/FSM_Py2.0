@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QDockWidget, QFrame, QVBoxLayout, QGroupBox, QGridLayout, QLabel, QComboBox, QStackedWidget,
     QLineEdit, QRadioButton, QButtonGroup, QDoubleSpinBox, QPushButton, QHBoxLayout, QTextEdit,
-    QFileDialog, QToolButton
+    QFileDialog
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -172,16 +172,16 @@ class SimulationDock(QDockWidget):
         control_group_box_layout = QHBoxLayout()
         control_group_box.setStyleSheet(GROUP_BOX_STYLE_SHEET)
 
-        self.start_button = QToolButton()
+        self.start_button = QPushButton()
         self.start_button.setIcon(QIcon(f"{ICONS_PATH}/play.png"))
         # self.start_button.clicked.connect(self.start)
-        self.stop_button = QToolButton()
+        self.stop_button = QPushButton()
         self.stop_button.setIcon(QIcon(f"{ICONS_PATH}/stop.png"))
         # self.stop_button.clicked.connect(self.stop)
-        self.pause_button = QToolButton()
+        self.pause_button = QPushButton()
         self.pause_button.setIcon(QIcon(f"{ICONS_PATH}/pause.png"))
         # self.pause_button.clicked.connect(self.pause)
-        self.reset_button = QToolButton("Step Forward")
+        self.reset_button = QPushButton("Step Forward")
         self.reset_button.setIcon(QIcon(f"{ICONS_PATH}/fast.png"))
         # self.reset_button.clicked.connect(self.reset)
 
