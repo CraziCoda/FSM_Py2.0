@@ -1,10 +1,12 @@
 from PyQt5.QtWidgets import (
     QDockWidget, QFrame, QVBoxLayout, QGroupBox, QGridLayout, QLabel, QComboBox, QStackedWidget,
     QLineEdit, QRadioButton, QButtonGroup, QDoubleSpinBox, QPushButton, QHBoxLayout, QTextEdit,
-    QFileDialog
+    QFileDialog, QToolButton
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtGui import QIcon
+
+from utils.constants import ICONS_PATH
 
 
 class SimulationDock(QDockWidget):
@@ -170,14 +172,17 @@ class SimulationDock(QDockWidget):
         control_group_box_layout = QHBoxLayout()
         control_group_box.setStyleSheet(GROUP_BOX_STYLE_SHEET)
 
-
-        self.start_button = QPushButton("Start")
+        self.start_button = QToolButton()
+        self.start_button.setIcon(QIcon(f"{ICONS_PATH}/play.png"))
         # self.start_button.clicked.connect(self.start)
-        self.stop_button = QPushButton("Stop")
+        self.stop_button = QToolButton()
+        self.stop_button.setIcon(QIcon(f"{ICONS_PATH}/stop.png"))
         # self.stop_button.clicked.connect(self.stop)
-        self.pause_button = QPushButton("Pause")
+        self.pause_button = QToolButton()
+        self.pause_button.setIcon(QIcon(f"{ICONS_PATH}/pause.png"))
         # self.pause_button.clicked.connect(self.pause)
-        self.reset_button = QPushButton("Step Forward")
+        self.reset_button = QToolButton("Step Forward")
+        self.reset_button.setIcon(QIcon(f"{ICONS_PATH}/fast.png"))
         # self.reset_button.clicked.connect(self.reset)
 
         control_group_box_layout.addWidget(self.start_button)
@@ -252,12 +257,14 @@ class SimulationDock(QDockWidget):
 
         if file_path:
             self.label_input_status.setText(f"✅ Imported: {file_path}")
-            self.label_input_status.setStyleSheet("color: green; font-weight: bold;")
+            self.label_input_status.setStyleSheet(
+                "color: green; font-weight: bold;")
             self.input_button.setText("Change File")
             self.file_path = file_path
         else:
             self.label_input_status.setText("❌ No file selected")
-            self.label_input_status.setStyleSheet("color: red; font-weight: bold;")
+            self.label_input_status.setStyleSheet(
+                "color: red; font-weight: bold;")
 
 
 LOG_STYLE = """
