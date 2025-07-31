@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (
     QDockWidget, QFrame, QVBoxLayout, QGroupBox, QGridLayout, QLabel, QComboBox, QStackedWidget,
-    QLineEdit, QRadioButton, QButtonGroup, QDoubleSpinBox, QPushButton, QHBoxLayout
+    QLineEdit, QRadioButton, QButtonGroup, QDoubleSpinBox, QPushButton, QHBoxLayout, QTextEdit,
+    QFileDialog
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QDoubleValidator
@@ -36,6 +37,7 @@ class SimulationDock(QDockWidget):
         self.input_mode_combobox.addItem("String")
         self.input_mode_combobox.addItem("File")
         self.input_mode_combobox.addItem("Keyboard")
+        self.input_mode_combobox.currentIndexChanged.connect(self.switch_input)
 
         mode_group_box_layout.addWidget(input_mode_label, 1, 0)
         mode_group_box_layout.addWidget(self.input_mode_combobox, 1, 1)
@@ -100,10 +102,13 @@ class SimulationDock(QDockWidget):
         file_input_frame.setLayout(file_input_layout)
 
         # Add a label and input for the file path
-        label_input_status = QLabel("No file selected")
+        self.label_input_status = QLabel("No file selected")
+        self.label_input_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label_input_status.setWordWrap(True)
         self.input_button = QPushButton("Select File")
+        self.input_button.clicked.connect(self.select_file)
 
-        file_input_layout.addWidget(label_input_status, 0, 0, 1, 2,
+        file_input_layout.addWidget(self.label_input_status, 0, 0, 1, 2,
                                     Qt.AlignmentFlag.AlignCenter)
         file_input_layout.addWidget(self.input_button, 1, 0, 1, 2,
                                     Qt.AlignmentFlag.AlignCenter)
@@ -166,11 +171,11 @@ class SimulationDock(QDockWidget):
 
         self.start_button = QPushButton("Start")
         # self.start_button.clicked.connect(self.start)
-        self.pause_button = QPushButton("Pause")
-        # self.pause_button.clicked.connect(self.pause)
         self.stop_button = QPushButton("Stop")
         # self.stop_button.clicked.connect(self.stop)
-        self.reset_button = QPushButton("Reset")
+        self.pause_button = QPushButton("Pause")
+        # self.pause_button.clicked.connect(self.pause)
+        self.reset_button = QPushButton("Step Forward")
         # self.reset_button.clicked.connect(self.reset)
 
         control_group_box_layout.addWidget(self.start_button)
@@ -180,12 +185,81 @@ class SimulationDock(QDockWidget):
 
         control_group_box.setLayout(control_group_box_layout)
 
+        # Status
+
+        status = QGroupBox("Status")
+        status_layout = QGridLayout()
+
+        status_label = QLabel("Current Status: ")
+        self.current_status = QLabel("Idle")
+
+        self.current_state = QLabel("Current State: ")
+        self.current_state_name = QLabel("None")
+
+        state_status_label = QLabel("Current State: ")
+        self.current_state_name = QLabel("None")
+
+        tick_label = QLabel("Current Tick: ")
+        self.current_tick = QLabel("0")
+
+        status_layout.addWidget(status_label, 0, 0)
+        status_layout.addWidget(self.current_status, 0, 1)
+        status_layout.addWidget(self.current_state, 1, 0)
+        status_layout.addWidget(self.current_state_name, 1, 1)
+        status_layout.addWidget(tick_label, 2, 0)
+        status_layout.addWidget(self.current_tick, 2, 1)
+
+        status_layout.setColumnStretch(1, 1)
+
+        status.setLayout(status_layout)
+
+        # Simulator Console
+        console_group_box = QGroupBox("Console")
+        console_group_box_layout = QVBoxLayout()
+
+        self.console = QTextEdit()
+        self.console.setReadOnly(True)
+        self.console.setStyleSheet(LOG_STYLE)
+        console_group_box_layout.addWidget(self.console)
+
+        self.console.append(
+            "<span style=\"color: #a8a8a8; font-style: italic;\">Simulation logs will appear here</span>")
+
+        console_group_box.setLayout(console_group_box_layout)
+
         main_layout = QVBoxLayout()
 
         main_layout.addWidget(mode_group_box, 0)
         main_layout.addWidget(input_group_box, 0)
         main_layout.addWidget(control_group_box, 0)
+        main_layout.addWidget(status, 0)
+        main_layout.addWidget(console_group_box, 1)
 
         main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         main_frame.setLayout(main_layout)
         self.setWidget(main_frame)
+
+    def switch_input(self, index):
+        self.input_stack.setCurrentIndex(index)
+
+    def select_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select File", "", "All Files (*)")
+
+        if file_path:
+            self.label_input_status.setText(f"✅ Imported: {file_path}")
+            self.label_input_status.setStyleSheet("color: green; font-weight: bold;")
+            self.input_button.setText("Change File")
+            self.file_path = file_path
+        else:
+            self.label_input_status.setText("❌ No file selected")
+            self.label_input_status.setStyleSheet("color: red; font-weight: bold;")
+
+
+LOG_STYLE = """
+QTextEdit {
+    background-color: #1e1e1e;
+    border: 1px solid #3e3e3e;
+    border-radius: 5px;
+}
+"""
