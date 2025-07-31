@@ -21,6 +21,7 @@ class SimulationDock(QDockWidget):
         mode_group_box.setTitle("Simulation Mode")
         mode_group_box_layout = QGridLayout()
         mode_group_box.setLayout(mode_group_box_layout)
+        mode_group_box.setStyleSheet(GROUP_BOX_STYLE_SHEET)
 
         # Create a label and combobox for the FSM mode
         fsm_mode_label = QLabel("FSM Mode: ")
@@ -47,8 +48,7 @@ class SimulationDock(QDockWidget):
         input_group_box = QGroupBox()
         input_group_box.setTitle("Input")
         input_group_box_layout = QVBoxLayout()
-        input_group_box_layout.setContentsMargins(0, 0, 0, 0)
-        input_group_box_layout.setSpacing(0)
+        input_group_box.setStyleSheet(GROUP_BOX_STYLE_SHEET)
 
         self.input_stack = QStackedWidget()
 
@@ -168,6 +168,8 @@ class SimulationDock(QDockWidget):
         # Controls
         control_group_box = QGroupBox("Controls")
         control_group_box_layout = QHBoxLayout()
+        control_group_box.setStyleSheet(GROUP_BOX_STYLE_SHEET)
+
 
         self.start_button = QPushButton("Start")
         # self.start_button.clicked.connect(self.start)
@@ -189,6 +191,7 @@ class SimulationDock(QDockWidget):
 
         status = QGroupBox("Status")
         status_layout = QGridLayout()
+        status.setStyleSheet(GROUP_BOX_STYLE_SHEET)
 
         status_label = QLabel("Current Status: ")
         self.current_status = QLabel("Idle")
@@ -216,6 +219,7 @@ class SimulationDock(QDockWidget):
         # Simulator Console
         console_group_box = QGroupBox("Console")
         console_group_box_layout = QVBoxLayout()
+        console_group_box.setStyleSheet(GROUP_BOX_STYLE_SHEET)
 
         self.console = QTextEdit()
         self.console.setReadOnly(True)
@@ -260,6 +264,26 @@ LOG_STYLE = """
 QTextEdit {
     background-color: #1e1e1e;
     border: 1px solid #3e3e3e;
+    border-radius: 5px;
+}
+"""
+
+GROUP_BOX_STYLE_SHEET = """
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    outline: none;
+    border: none;
+    margin-left: 10px;
+    color: #2596be;
+}
+
+QGroupBox {
+    margin-left: 5px;
+    padding: 0 10px;
+    border: 1px solid #ccc;
+    margin-top: 10px;
     border-radius: 5px;
 }
 """
