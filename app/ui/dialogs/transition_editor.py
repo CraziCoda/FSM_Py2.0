@@ -26,6 +26,11 @@ class TransitionEditorDialog(QDialog):
         self.appearance_layout = QGridLayout()
         self.appearance_layout.setContentsMargins(10, 30, 10, 30)
 
+        label_name_label = QLabel("Label: ")
+        self.label_name_input = QLineEdit()
+        self.label_name_input.setText(self.transition.label)
+
+
         line_color_label = QLabel("Line Color")
         self.line_color_input = QPushButton(self.transition.color.name())
         self.line_color_input.setStyleSheet("background-color: %s" % self.transition.color.name())
@@ -46,14 +51,17 @@ class TransitionEditorDialog(QDialog):
         self.line_width_input.setValidator(validator)
 
 
-        self.appearance_layout.addWidget(line_color_label, 0, 0)
-        self.appearance_layout.addWidget(self.line_color_input, 0, 1)
+        self.appearance_layout.addWidget(label_name_label, 0, 0)
+        self.appearance_layout.addWidget(self.label_name_input, 0, 1)
 
-        self.appearance_layout.addWidget(control_point_label, 1, 0)
-        self.appearance_layout.addWidget(self.control_point_color_input, 1, 1)
+        self.appearance_layout.addWidget(line_color_label, 1, 0)
+        self.appearance_layout.addWidget(self.line_color_input, 1, 1)
 
-        self.appearance_layout.addWidget(line_width_label, 2, 0)
-        self.appearance_layout.addWidget(self.line_width_input, 2, 1)
+        self.appearance_layout.addWidget(control_point_label, 2, 0)
+        self.appearance_layout.addWidget(self.control_point_color_input, 2, 1)
+
+        self.appearance_layout.addWidget(line_width_label, 3, 0)
+        self.appearance_layout.addWidget(self.line_width_input, 3, 1)
 
         self.appearance_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.appearance_layout.setColumnStretch(1, 1)
@@ -98,6 +106,7 @@ class TransitionEditorDialog(QDialog):
 
     def save_changes(self):
         self.transition.width = float(self.line_width_input.text())
+        self.transition.label = self.label_name_input.text()
         self.transition.updatePath()
 
         self.accept()

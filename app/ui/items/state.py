@@ -164,6 +164,7 @@ class TransitionItem(QGraphicsPathItem):
         if self.scene() is not None:
             self.updatePath()
             self.control_points_item.reinit()
+            self.label_item.updateUI()
 
     def updatePath(self):
         if self.source == self.destination:
@@ -233,6 +234,7 @@ class TransitionItem(QGraphicsPathItem):
             self.control_points_item.updateUI()
             self.prepareGeometryChange()
 
+        self.label_item.updateUI()
         self.control_points_item.updateUI()
 
     def paint(self, painter, option, widget=...):
@@ -388,6 +390,8 @@ class TransitionLabel(QGraphicsItemGroup):
 
     def updateUI(self):
         self.text_item.setPlainText(self.parent.label)
+        self.text_rect = self.text_item.boundingRect().adjusted(-self.padding, -self.padding, self.padding, self.padding)
+        self.border_item.setRect(self.text_rect)
 
 
 class FSMModel:
