@@ -130,7 +130,7 @@ class StateItem(QGraphicsItem):
 
 
 class TransitionItem(QGraphicsPathItem):
-    def __init__(self, source: StateItem, destination: StateItem, label="Hello", parent=None):
+    def __init__(self, source: StateItem, destination: StateItem, label="", parent=None):
         super().__init__(parent)
         self.id = uuid.uuid4().hex
 
