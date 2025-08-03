@@ -101,7 +101,6 @@ class StateItem(QGraphicsItem):
             painter.setBrush(self.border_color)
             painter.drawPolygon(arrow_head)
         else:
-            # self.arrow.hide()
             pass
 
         painter.setPen(QPen(self.text_color))
@@ -430,6 +429,14 @@ class FSMModel:
 
     def set_is_saved(self, is_saved: bool):
         self.is_saved = is_saved
+
+    def get_new_state_name(self):
+        i = 0
+        while True:
+            name = f"q{i}"
+            if not any(state.name == name for state in self.states):
+                return name
+            i += 1
 
     def to_json(self):
         model_json = {

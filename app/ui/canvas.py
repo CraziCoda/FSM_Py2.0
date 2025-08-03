@@ -79,19 +79,22 @@ class CanvasView(QGraphicsView):
             pos  = self.mapToScene(event.pos())
 
             if text == "Add State":
-                state = StateItem("State")
+                new_state_name = self.fsm_model.get_new_state_name()
+                state = StateItem(new_state_name)
                 state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif text == "Add Initial State":
-                state = StateItem("State", is_initial=True)
+                new_state_name = self.fsm_model.get_new_state_name()
+                state = StateItem(new_state_name, is_initial=True)
                 state.setPos(pos)
                 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif text == "Add Accepting State":
-                state = StateItem("State", is_accepting=True)
+                new_state_name = self.fsm_model.get_new_state_name()
+                state = StateItem(new_state_name, is_accepting=True)
                 state.setPos(pos)
                 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
@@ -117,19 +120,22 @@ class CanvasView(QGraphicsView):
                 self.temp_line = None
                 
             if self.selected_tool == "add_state":
-                state = StateItem("State")
+                new_state_name = self.fsm_model.get_new_state_name()
+                state = StateItem(new_state_name)
                 state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif self.selected_tool == "add_initial_state":
-                state = StateItem("State", is_initial=True)
+                new_state_name = self.fsm_model.get_new_state_name()
+                state = StateItem(new_state_name, is_initial=True)
                 state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
             elif self.selected_tool == "add_accepting_state":
-                state = StateItem("State", is_accepting=True)
+                new_state_name = self.fsm_model.get_new_state_name()
+                state = StateItem(new_state_name, is_accepting=True)
                 state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
