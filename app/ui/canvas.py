@@ -17,6 +17,7 @@ class CanvasView(QGraphicsView):
         self.parent_window = parent
 
         self.command_manager = CommandManager(parent.logger)
+        parent.validator.set_model(self.fsm_model)
         self.selected_tool: str = parent.getSelectedTool()
 
         self.scene: QGraphicsScene = QGraphicsScene(self)
@@ -46,6 +47,8 @@ class CanvasView(QGraphicsView):
         for transition in self.fsm_model.transitions:
             self.scene.addItem(transition)
             transition.reinit()
+
+        self.parent_window.validator.set_model(self.fsm_model)
     
     def drawBackground(self, painter, rect):
         super().drawBackground(painter, rect)

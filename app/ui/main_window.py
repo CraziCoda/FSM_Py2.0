@@ -7,6 +7,7 @@ from app.ui.docks.simulation import SimulationDock
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
 from app.core.logger import ActivityLogger
+from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
 from utils.constants import ICONS_PATH
 
@@ -16,6 +17,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("FSM V2.0")
         self.logger = ActivityLogger()
+        self.validator = FSMValidator()
         self.selected_tool: str = ""
 
         self._create_central_widget()
@@ -152,9 +154,10 @@ class MainWindow(QMainWindow):
         self.tabifyDockWidget(self.properties_dock, self.simulation_dock)
         self.properties_dock.raise_()
 
-
         console_dock = ConsoleDock(self)    
-        self.logger.setConsoleDock(console_dock)    
+        self.logger.setConsoleDock(console_dock)
+        self.validator.set_console_dock(console_dock)  
+        self.validator.validate()
 
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock)
 

@@ -5,21 +5,22 @@ class ConsoleDock(QDockWidget):
     def __init__(self, parent=None):
         super().__init__("Console", parent)
 
-        tabs = QTabWidget()
+        self.tabs = QTabWidget()
         self.log_text = QTextEdit()
         self.validation_issue = QTextEdit()
+        self.validation_issues = []
 
         for box in (self.log_text, self.validation_issue):
             box.setReadOnly(True)
 
-        tabs.addTab(self.log_text, "Logs")
-        tabs.addTab(self.validation_issue, "Validation")
+        self.tabs.addTab(self.log_text, "Logs")
+        self.tabs.addTab(self.validation_issue, "Validation")
 
-        tabs.setTabPosition(QTabWidget.TabPosition.South)
+        self.tabs.setTabPosition(QTabWidget.TabPosition.South)
 
         self.log_text.setStyleSheet(LOG_STYLE)
 
-        self.setWidget(tabs)
+        self.setWidget(self.tabs)
 
     def append_log(self, timestamp, log_level, caller, message):
         if log_level == "WARNING":
@@ -38,7 +39,15 @@ class ConsoleDock(QDockWidget):
             </p>
         """)
 
-    def append_validation(self, text): self.validation_issue.append(text)
+    def append_validation(self, issues: list[str]):
+        self.validation_issues = issues
+        self.validation_issue.setText("\n".join(issues))
+
+        if len(issues) > 0:
+            self.tabs.setTabText(1, f"Validation ({len(issues)})")
+
+
+    def clear_validation(self): self.validation_issue.clear()
 
 
 LOG_STYLE = """
