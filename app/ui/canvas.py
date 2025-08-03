@@ -152,7 +152,7 @@ class CanvasView(QGraphicsView):
 
                 elif self.selected_tool == "add_transition":
                     if self.starting_state:
-                        transition_name = f"{item.name} / ε"
+                        transition_name = f"{self.starting_state.name} -> {item.name}"
                         transition = TransitionItem(self.starting_state, item, transition_name)
 
                         command = AddTransitionCommand(transition, self.scene, self.fsm_model)
@@ -170,7 +170,7 @@ class CanvasView(QGraphicsView):
                     return
                 
                 elif self.selected_tool == "loop_transition":
-                    transition_name = f"{item.name} / ε"
+                    transition_name = f"{item.name} -> {item.name}"
                     transition = TransitionItem(item, item, transition_name)
 
                     command = AddTransitionCommand(transition, self.scene, self.fsm_model)
