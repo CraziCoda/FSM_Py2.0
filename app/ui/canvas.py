@@ -16,7 +16,7 @@ class CanvasView(QGraphicsView):
 
         self.parent_window = parent
 
-        self.command_manager = CommandManager(parent.logger)
+        self.command_manager = CommandManager(parent.logger, parent.validator)
         parent.validator.set_model(self.fsm_model)
         self.selected_tool: str = parent.getSelectedTool()
 

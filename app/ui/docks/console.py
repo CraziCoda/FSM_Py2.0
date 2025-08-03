@@ -19,6 +19,7 @@ class ConsoleDock(QDockWidget):
         self.tabs.setTabPosition(QTabWidget.TabPosition.South)
 
         self.log_text.setStyleSheet(LOG_STYLE)
+        self.validation_issue.setStyleSheet(VALIDATION_STYLE)
 
         self.setWidget(self.tabs)
 
@@ -45,6 +46,8 @@ class ConsoleDock(QDockWidget):
 
         if len(issues) > 0:
             self.tabs.setTabText(1, f"Validation ({len(issues)})")
+        else:
+            self.tabs.setTabText(1, "Validation")
 
 
     def clear_validation(self): self.validation_issue.clear()
@@ -55,5 +58,14 @@ QTextEdit {
     background-color: #1e1e1e;
     border: 1px solid #3e3e3e;
     border-radius: 5px;
+}
+"""
+
+VALIDATION_STYLE = """
+QTextEdit {
+    background-color: #2d1b1b;
+    border: 1px solid #5e3e3e;
+    border-radius: 5px;
+    color: #ffcccc;
 }
 """

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.ui.main_window import MainWindow
     from app.ui.canvas import CanvasView
+    from app.core.validator import FSMValidator
 
 
 
@@ -31,10 +32,11 @@ class BaseCommand:
 
 
 class CommandManager:
-    def __init__(self, logger: ActivityLogger):
+    def __init__(self, logger: ActivityLogger, validator: "FSMValidator"):
         self.undo_stack: list[BaseCommand] = []
         self.redo_stack: list[BaseCommand] = []
         self.logger = logger
+        self.validator = validator
         self.redo_button:  QAction | None = None
         self.undo_button:  QAction | None = None
 
@@ -46,6 +48,7 @@ class CommandManager:
         self.undo_button.setEnabled(True)
         self.logger.log(f"Command executed: {command.log}",
                         command.calling_class, command.logging_level)
+        self.validator.validate()
 
     def undo(self):
         if len(self.undo_stack) > 0:
