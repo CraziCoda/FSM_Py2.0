@@ -29,6 +29,7 @@ class ItemProperties(QDockWidget):
 
         actions_layout = QVBoxLayout()
         self.apply_button = QPushButton("Apply Changes")
+        self.apply_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.apply_button.setDisabled(True)
         self.apply_button.hide()
         self.apply_button.clicked.connect(self.apply)

@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.simulation_dock)
 
         self.tabifyDockWidget(self.properties_dock, self.simulation_dock)
-        # self.properties_dock.raise_()
+        self.properties_dock.raise_()
 
 
         console_dock = ConsoleDock(self)    
