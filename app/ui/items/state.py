@@ -151,7 +151,6 @@ class TransitionItem(QGraphicsPathItem):
         self.control_points_item.setZValue(1)
 
         self.label_item = TransitionLabel(self)
-        
 
         if self.scene() is not None:
             self.scene().addItem(self.label_item)
@@ -189,7 +188,8 @@ class TransitionItem(QGraphicsPathItem):
             painter.addEllipse(circle_rect)
             self.setPath(painter)
 
-            _label_pos = self.get_normal_point_on_circle_qt(painter.boundingRect().center(), self.control_point)
+            _label_pos = self.get_normal_point_on_circle_qt(
+                painter.boundingRect().center(), self.control_point)
             self.label_item.setPos(_label_pos)
 
             # mid_point = self.control_point - self.label_item.boundingRect().center()
@@ -217,7 +217,7 @@ class TransitionItem(QGraphicsPathItem):
             self.setPath(path)
 
             mid_point = path.pointAtPercent(0.5)
-            mid_point -= self.label_item.boundingRect().center() 
+            mid_point -= self.label_item.boundingRect().center()
 
             # self.label_item.setPos(mid_point)
 
@@ -233,7 +233,7 @@ class TransitionItem(QGraphicsPathItem):
             self.control_points_item.setPos(self.control_point)
             self.control_points_item.updateUI()
             self.prepareGeometryChange()
-        
+
         self.control_points_item.updateUI()
 
     def paint(self, painter, option, widget=...):
@@ -260,7 +260,7 @@ class TransitionItem(QGraphicsPathItem):
 
         dialog.exec_()
         return super().mouseDoubleClickEvent(event)
-    
+
     def get_perpendicular_point(self, p1: QPointF, p2: QPointF, length=30) -> QPointF:
         # Step 1: Vector from p1 to p2
         dx = p2.x() - p1.x()
@@ -275,14 +275,12 @@ class TransitionItem(QGraphicsPathItem):
         perp_dx = -dy / magnitude
         perp_dy = dx / magnitude
 
-
         # Step 3: Get new point at desired distance
         new_x = p2.x() + perp_dx * length
         new_y = p2.y() + perp_dy * length
 
         return QPointF(new_x, new_y)
-    
-    
+
     def get_normal_point_on_circle_qt(self, center: QPointF, point_on_circle: QPointF, length: float = 0) -> QPointF:
         dx = point_on_circle.x() - center.x()
         dy = point_on_circle.y() - center.y()
@@ -298,7 +296,6 @@ class TransitionItem(QGraphicsPathItem):
         qy = point_on_circle.y() + ny * length
 
         return QPointF(qx, qy)
-        
 
 
 class ControlPointItem(QGraphicsPolygonItem):
@@ -337,7 +334,7 @@ class ControlPointItem(QGraphicsPolygonItem):
 
     def point_to_dest(self):
         target = self.parent.destination
-        
+
         if hasattr(self.parent, "control_point"):
             me = self.parent.control_point
             dx = target.scenePos().x() - me.x()
@@ -348,7 +345,7 @@ class ControlPointItem(QGraphicsPolygonItem):
             dy = target.scenePos().y() - self.scenePos().y()
 
         angle = math.degrees(math.atan2(dy, dx)) + 90
-        self.setRotation(angle)    
+        self.setRotation(angle)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
@@ -360,17 +357,24 @@ class ControlPointItem(QGraphicsPolygonItem):
         self.point_to_dest()
         self.setBrush(self.parent.control_point_color)
 
+
 class TransitionLabel(QGraphicsItemGroup):
-    def __init__(self, parent: TransitionItem=None):
+    def __init__(self, parent: TransitionItem = None):
         super().__init__(parent)
 
+        self.parent =  parent
 
-        self.text_item = QGraphicsTextItem()
-        self.text_item.setPlainText(parent.label)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+
+        self.text_item = QGraphicsTextItem(parent.label, parent)
         self.text_item.setFont(QFont("Arial", 12))
+        self.text_item.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextEditorInteraction)
 
         self.padding = 4
-        self.text_rect = self.text_item.boundingRect().adjusted(-self.padding, -self.padding, self.padding, self.padding)
+        self.text_rect = self.text_item.boundingRect().adjusted(-self.padding, -
+                                                                self.padding, self.padding, self.padding)
 
         self.border_item = QGraphicsRectItem(self.text_rect)
         self.border_item.setPen(QPen(QColor("#e28743"), 2))
@@ -378,6 +382,13 @@ class TransitionLabel(QGraphicsItemGroup):
 
         self.addToGroup(self.border_item)
         self.addToGroup(self.text_item)
+
+        # Ensure the item can receive focus
+        self.text_item.setFlag(
+            QGraphicsTextItem.GraphicsItemFlag.ItemIsFocusable, True)
+
+    def updateUI(self):
+        self.text_item.setPlainText(self.parent.label)
 
 
 class FSMModel:
@@ -469,7 +480,7 @@ class FSMModel:
         model_json["transitions"] = transitions_json
 
         return model_json
-    
+
     def clear(self):
         for state in self.states:
             state.scene().removeItem(state)
@@ -480,22 +491,25 @@ class FSMModel:
 
         self.states = []
         self.transitions = []
-        
+
     def get_state_by_id(self, state_id):
         for state in self.states:
             if state.id == state_id:
                 return state
-    
+
     def from_json(self, model_json):
         self.id = model_json["id"]
         self.name = model_json["name"]
         self.is_saved = True
 
         for state_json in model_json["states"]:
-            state = StateItem(state_json["name"], state_json["is_initial"], state_json["is_accepting"], id=state_json["id"])
-            state.setPos(state_json["properties"]["x"], state_json["properties"]["y"])
+            state = StateItem(state_json["name"], state_json["is_initial"],
+                              state_json["is_accepting"], id=state_json["id"])
+            state.setPos(state_json["properties"]["x"],
+                         state_json["properties"]["y"])
             state.bg_color = QColor(state_json["properties"]["bg_color"])
-            state.border_color = QColor(state_json["properties"]["border_color"])
+            state.border_color = QColor(
+                state_json["properties"]["border_color"])
             state.text_color = QColor(state_json["properties"]["text_color"])
             self.add_state(state)
 
@@ -503,8 +517,10 @@ class FSMModel:
             source = self.get_state_by_id(transition_json["source"])
             destination = self.get_state_by_id(transition_json["destination"])
 
-            transition = TransitionItem(source, destination, transition_json["label"])
+            transition = TransitionItem(
+                source, destination, transition_json["label"])
             transition.color = QColor(transition_json["properties"]["color"])
             transition.width = transition_json["properties"]["width"]
-            transition.control_point_color = QColor(transition_json["properties"]["control_point"]["color"])
+            transition.control_point_color = QColor(
+                transition_json["properties"]["control_point"]["color"])
             self.add_transition(transition)
