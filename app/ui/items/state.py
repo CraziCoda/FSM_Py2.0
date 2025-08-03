@@ -151,6 +151,7 @@ class TransitionItem(QGraphicsPathItem):
         self.control_points_item.setZValue(1)
 
         self.label_item = TransitionLabel(self)
+        
 
         if self.scene() is not None:
             self.scene().addItem(self.label_item)
@@ -188,8 +189,11 @@ class TransitionItem(QGraphicsPathItem):
             painter.addEllipse(circle_rect)
             self.setPath(painter)
 
-            mid_point = self.control_point - self.label_item.boundingRect().center()
-            self.label_item.setPos(mid_point)
+            _label_pos = self.get_normal_point_on_circle_qt(painter.boundingRect().center(), self.control_point)
+            self.label_item.setPos(_label_pos)
+
+            # mid_point = self.control_point - self.label_item.boundingRect().center()
+            # self.label_item.setPos(mid_point)
 
             self.control_points_item.updateUI()
             self.prepareGeometryChange()
@@ -215,7 +219,16 @@ class TransitionItem(QGraphicsPathItem):
             mid_point = path.pointAtPercent(0.5)
             mid_point -= self.label_item.boundingRect().center() 
 
-            self.label_item.setPos(mid_point)
+            # self.label_item.setPos(mid_point)
+
+            _label_pos = self.get_perpendicular_point(
+                path.pointAtPercent(0.0),
+                path.pointAtPercent(0.5)
+            )
+
+            mid_label = _label_pos - self.label_item.boundingRect().center()
+
+            self.label_item.setPos(mid_label)
 
             self.control_points_item.setPos(self.control_point)
             self.control_points_item.updateUI()
@@ -247,6 +260,45 @@ class TransitionItem(QGraphicsPathItem):
 
         dialog.exec_()
         return super().mouseDoubleClickEvent(event)
+    
+    def get_perpendicular_point(self, p1: QPointF, p2: QPointF, length=30) -> QPointF:
+        # Step 1: Vector from p1 to p2
+        dx = p2.x() - p1.x()
+        dy = p2.y() - p1.y()
+
+        # Step 2: Normalize the vector and rotate 90 degrees
+        magnitude = (dx**2 + dy**2)**0.5
+        if magnitude == 0:
+            return p2  # Avoid division by zero
+
+        # Unit perpendicular vector (90° rotation)
+        perp_dx = -dy / magnitude
+        perp_dy = dx / magnitude
+
+
+        # Step 3: Get new point at desired distance
+        new_x = p2.x() + perp_dx * length
+        new_y = p2.y() + perp_dy * length
+
+        return QPointF(new_x, new_y)
+    
+    
+    def get_normal_point_on_circle_qt(self, center: QPointF, point_on_circle: QPointF, length: float = 0) -> QPointF:
+        dx = point_on_circle.x() - center.x()
+        dy = point_on_circle.y() - center.y()
+
+        length = math.hypot(dx, dy)
+        if length == 0:
+            raise ValueError("Center and point on circle cannot be the same.")
+
+        nx = dx / length
+        ny = dy / length
+
+        qx = point_on_circle.x() + nx * length
+        qy = point_on_circle.y() + ny * length
+
+        return QPointF(qx, qy)
+        
 
 
 class ControlPointItem(QGraphicsPolygonItem):
