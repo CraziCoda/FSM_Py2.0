@@ -119,7 +119,7 @@ class StateItem(QGraphicsItem):
         return super().itemChange(change, value)
 
     def mouseDoubleClickEvent(self, event):
-        dialog = StateEditorDialog(self, parent=self)
+        dialog = StateEditorDialog(self)
 
         dialog.exec_()
         return super().mouseDoubleClickEvent(event)
@@ -257,7 +257,7 @@ class TransitionItem(QGraphicsPathItem):
         return rect
 
     def mouseDoubleClickEvent(self, event):
-        dialog = TransitionEditorDialog(self, parent=self)
+        dialog = TransitionEditorDialog(self)
 
         dialog.exec_()
         return super().mouseDoubleClickEvent(event)
