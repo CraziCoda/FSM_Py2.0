@@ -23,6 +23,12 @@ class TransitionItem(QGraphicsObject):
         self.destination: "StateItem" = destination
         self.label = label
         self.is_deleted = False
+        
+        # Simulation properties
+        self.input_symbols = []     # List of input symbols that trigger this transition
+        self.guard_condition = ""   # Boolean condition for transition
+        self.output_value = ""      # For Mealy machines
+        self.actions = []           # Actions to execute during transition
 
         # Visual properties
         self._width = 2

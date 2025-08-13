@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem,
                              QGraphicsItemGroup,  QGraphicsTextItem, QGraphicsPolygonItem,
-                             QGraphicsRectItem, QGraphicsObject )
+                             QGraphicsRectItem, QGraphicsObject)
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF, QPropertyAnimation, QEasingCurve, pyqtProperty, QObject
 from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor, QFont
 from app.ui.dialogs.state_editor import StateEditorDialog
@@ -29,6 +29,11 @@ class StateItem(QGraphicsObject):
         self.is_accepting = is_accepting
         self.comment = ""
         self.is_deleted = False
+
+        # Simulation properties
+        self.output_value = ""      # For Moore machines
+        self.entry_actions: list[str] = []     # Actions on state entry
+        self.exit_actions: list[str] = []      # Actions on state exit
 
         # Visual properties
         self.width = 100
@@ -127,7 +132,7 @@ class StateItem(QGraphicsObject):
     def updateUI(self):
         self.update()
         self.scene().update()
-    
+
     def animate_active(self):
         """Animate state when it's active during simulation"""
         self.animation = QPropertyAnimation(self, b"scale")
@@ -137,7 +142,7 @@ class StateItem(QGraphicsObject):
         self.animation.setEasingCurve(QEasingCurve.InOutQuad)
         self.animation.finished.connect(self._animate_active_reverse)
         self.animation.start()
-    
+
     def _animate_active_reverse(self):
         """Reverse animation for active state"""
         self.animation = QPropertyAnimation(self, b"scale")
@@ -146,22 +151,22 @@ class StateItem(QGraphicsObject):
         self.animation.setEndValue(1.0)
         self.animation.setEasingCurve(QEasingCurve.InOutQuad)
         self.animation.start()
-    
+
     def animate_highlight(self):
         """Highlight animation for current state"""
         original_color = self.border_color
         self.border_color = QColor("#ff6b35")
         self.update()
-        
+
         # Reset color after animation
         from PyQt5.QtCore import QTimer
         QTimer.singleShot(1000, lambda: self._reset_highlight(original_color))
-    
+
     def _reset_highlight(self, original_color):
         """Reset highlight color"""
         self.border_color = original_color
         self.update()
-    
+
     def stop_animation(self):
         """Stop all animations"""
         if hasattr(self, 'animation') and self.animation:
@@ -177,6 +182,10 @@ class FSMModel:
         self.is_saved = True
         self.states: list[StateItem] = []
         self.transitions: list[TransitionItem] = []
+        
+        # Simulation properties
+        self.input_alphabet = set()      # Valid input symbols
+        self.output_alphabet = set()     # Valid output symbols
 
     def add_state(self, state: StateItem):
         self.states.append(state)
@@ -221,7 +230,9 @@ class FSMModel:
         model_json = {
             "id": self.id,
             "name": self.name,
-            "path": self.path
+            "path": self.path,
+            "input_alphabet": list(self.input_alphabet),
+            "output_alphabet": list(self.output_alphabet)
         }
         states_json = []
         transitions_json = []
@@ -232,6 +243,9 @@ class FSMModel:
                 "name": state.name,
                 "is_initial": state.is_initial,
                 "is_accepting": state.is_accepting,
+                "output_value": state.output_value,
+                "entry_actions": state.entry_actions,
+                "exit_actions": state.exit_actions,
                 "properties": {
                     "x": state.pos().x(),
                     "y": state.pos().y(),
@@ -249,6 +263,10 @@ class FSMModel:
                 "source": transition.source.id,
                 "destination": transition.destination.id,
                 "label": transition.label,
+                "input_symbols": transition.input_symbols,
+                "guard_condition": transition.guard_condition,
+                "output_value": transition.output_value,
+                "actions": transition.actions,
                 "properties": {
                     "control_point": {
                         "x": transition.control_point.x(),
@@ -284,29 +302,38 @@ class FSMModel:
                 return state
 
     def from_json(self, model_json):
-        self.id = model_json["id"]
-        self.name = model_json["name"]
+        self.id = model_json.get("id", uuid.uuid4().hex)
+        self.name = model_json.get("name", "")
         self.is_saved = True
+        self.input_alphabet = set(model_json.get("input_alphabet", []))
+        self.output_alphabet = set(model_json.get("output_alphabet", []))
 
-        for state_json in model_json["states"]:
-            state = StateItem(state_json["name"], state_json["is_initial"],
-                              state_json["is_accepting"], id=state_json["id"])
-            state.setPos(state_json["properties"]["x"],
-                         state_json["properties"]["y"])
-            state.bg_color = QColor(state_json["properties"]["bg_color"])
-            state.border_color = QColor(
-                state_json["properties"]["border_color"])
-            state.text_color = QColor(state_json["properties"]["text_color"])
+        for state_json in model_json.get("states", []):
+            state = StateItem(state_json.get("name", ""), state_json.get("is_initial", False),
+                              state_json.get("is_accepting", False), id=state_json.get("id"))
+            props = state_json.get("properties", {})
+            state.setPos(props.get("x", 0), props.get("y", 0))
+            state.bg_color = QColor(props.get("bg_color", "#abdbe3"))
+            state.border_color = QColor(props.get("border_color", "#e28743"))
+            state.text_color = QColor(props.get("text_color", "#000000"))
+            state.output_value = state_json.get("output_value", "")
+            state.entry_actions = state_json.get("entry_actions", [])
+            state.exit_actions = state_json.get("exit_actions", [])
             self.add_state(state)
 
-        for transition_json in model_json["transitions"]:
-            source = self.get_state_by_id(transition_json["source"])
-            destination = self.get_state_by_id(transition_json["destination"])
+        for transition_json in model_json.get("transitions", []):
+            source = self.get_state_by_id(transition_json.get("source"))
+            destination = self.get_state_by_id(transition_json.get("destination"))
 
             transition = TransitionItem(
-                source, destination, transition_json["label"])
-            transition.color = QColor(transition_json["properties"]["color"])
-            transition.width = transition_json["properties"]["width"]
-            transition.control_point_color = QColor(
-                transition_json["properties"]["control_point"]["color"])
+                source, destination, transition_json.get("label", ""))
+            props = transition_json.get("properties", {})
+            transition.color = QColor(props.get("color", "#1e81b0"))
+            transition.width = props.get("width", 2)
+            cp_props = props.get("control_point", {})
+            transition.control_point_color = QColor(cp_props.get("color", "#1e81b0"))
+            transition.input_symbols = transition_json.get("input_symbols", [])
+            transition.guard_condition = transition_json.get("guard_condition", "")
+            transition.output_value = transition_json.get("output_value", "")
+            transition.actions = transition_json.get("actions", [])
             self.add_transition(transition)
