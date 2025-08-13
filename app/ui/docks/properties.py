@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QDockWidget, QLabel, QLineEdit, QCheckBox, QTextEdit, QFrame, QGridLayout,
-    QVBoxLayout, QPushButton, QDoubleSpinBox, QColorDialog, QStackedWidget, QHBoxLayout)
+    QVBoxLayout, QPushButton, QDoubleSpinBox, QColorDialog, QStackedWidget, QHBoxLayout, QScrollArea)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QDoubleValidator, QColor
 from typing import TYPE_CHECKING
@@ -146,8 +146,16 @@ class ItemProperties(QDockWidget):
         props_layout.addStretch()
         props_frame.setLayout(props_layout)
         
-        self.stack_widget.addWidget(props_frame)
-        self.stack_widget.setCurrentWidget(props_frame)
+        # Wrap in scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(props_frame)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        
+        self.stack_widget.addWidget(scroll_area)
+        self.stack_widget.setCurrentWidget(scroll_area)
     
     def transition_properties(self, item: "TransitionItem"):
         props_frame = QFrame()
@@ -240,8 +248,16 @@ class ItemProperties(QDockWidget):
         props_layout.addStretch()
         props_frame.setLayout(props_layout)
         
-        self.stack_widget.addWidget(props_frame)
-        self.stack_widget.setCurrentWidget(props_frame)
+        # Wrap in scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(props_frame)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        
+        self.stack_widget.addWidget(scroll_area)
+        self.stack_widget.setCurrentWidget(scroll_area)
         
     def _create_field_group(self, label_text, widget_type):
         """Create a consistent field group with label and widget"""
@@ -343,6 +359,7 @@ QPushButton {
     border-radius: 6px;
     color: white;
     padding: 10px 16px;
+    margin: 8px 0;
     font-size: 12px;
     font-weight: 600;
 }
