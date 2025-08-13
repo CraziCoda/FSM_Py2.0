@@ -5,7 +5,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QDoubleValidator, QColor
 from typing import TYPE_CHECKING
 
-from app.ui.items.state import StateItem, TransitionItem
+from app.ui.items.state import StateItem
+from  app.ui.items.transition import TransitionItem
 
 class ItemProperties(QDockWidget):
     def __init__(self, parent=None):

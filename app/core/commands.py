@@ -1,6 +1,7 @@
 from app.core.logger import ActivityLogger
 from PyQt5.QtWidgets import QGraphicsScene, QAction, QFileDialog, QMessageBox
-from app.ui.items.state import StateItem, TransitionItem, FSMModel
+from app.ui.items.state import StateItem, FSMModel
+from app.ui.items.transition import TransitionItem
 from utils.constants import DEFAULT_MODEL_PATH
 from app.ui.dialogs.save_machine import SaveMachineDialog
 import json
@@ -10,7 +11,6 @@ if TYPE_CHECKING:
     from app.ui.main_window import MainWindow
     from app.ui.canvas import CanvasView
     from app.core.validator import FSMValidator
-
 
 
 class BaseCommand:
@@ -245,11 +245,13 @@ class SaveFSMModelCommand(BaseCommand):
                     self.log = f"Saved model: {json_data['name']}"
                     self.model.set_name(json_data["name"])
                     self.model.set_path(path)
-                    QMessageBox.information(None, "Saved", f"File saved to:\n{path}")
+                    QMessageBox.information(
+                        None, "Saved", f"File saved to:\n{path}")
                     self.model.set_is_saved(True)
                 else:
                     self.log = f"Unable to save model"
-                    QMessageBox.warning(None, "Invalid Input", "Both folder and file name are required.")
+                    QMessageBox.warning(
+                        None, "Invalid Input", "Both folder and file name are required.")
             else:
                 self.log = f"Cancelled saving model"
         else:
@@ -269,6 +271,7 @@ class SaveFSMModelCommand(BaseCommand):
     def redo(self):
         pass
 
+
 class OpenMachine(BaseCommand):
     def __init__(self, existing_machine: FSMModel, canvas: "CanvasView"):
         super().__init__()
@@ -283,16 +286,17 @@ class OpenMachine(BaseCommand):
     def execute(self):
         if not self.existing_machine.is_saved:
             self.log = f"Opening cancelled"
-            QMessageBox.warning(None, "Opening cancelled", "This machine has not been saved yet.")
+            QMessageBox.warning(None, "Opening cancelled",
+                                "This machine has not been saved yet.")
 
             return
-        
-        file_dialog = QFileDialog.getOpenFileName(None, "Open Machine", "", "JSON Files (*.json)")
+
+        file_dialog = QFileDialog.getOpenFileName(
+            None, "Open Machine", "", "JSON Files (*.json)")
         if file_dialog[0]:
             with open(file_dialog[0], "r") as f:
                 json_data = json.load(f)
 
-            
             new_model = FSMModel()
             new_model.set_path(file_dialog[0])
             new_model.from_json(json_data)

@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsLineItem
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPainter, QPen
-from app.ui.items.state import StateItem, TransitionItem, FSMModel
+from app.ui.items.state import StateItem, FSMModel
+from app.ui.items.transition import TransitionItem
 from app.core.commands import *
 from typing import TYPE_CHECKING
 

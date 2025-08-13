@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from app.ui.items.state import TransitionItem
+    from app.ui.items.transition import TransitionItem
 
 class TransitionEditorDialog(QDialog):
     def __init__(self, transition: "TransitionItem", parent=None):
