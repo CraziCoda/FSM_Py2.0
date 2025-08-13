@@ -6,7 +6,8 @@ from PyQt5.QtGui import QDoubleValidator, QColor
 from typing import TYPE_CHECKING
 
 from app.ui.items.state import StateItem
-from  app.ui.items.transition import TransitionItem
+from app.ui.items.transition import TransitionItem
+from app.ui.items.comment import CommentItem
 
 class ItemProperties(QDockWidget):
     def __init__(self, parent=None):
@@ -258,6 +259,64 @@ class ItemProperties(QDockWidget):
         
         self.stack_widget.addWidget(scroll_area)
         self.stack_widget.setCurrentWidget(scroll_area)
+    
+    def comment_properties(self, item: "CommentItem"):
+        props_frame = QFrame()
+        props_layout = QVBoxLayout()
+        props_layout.setContentsMargins(0, 0, 0, 0)
+        props_layout.setSpacing(12)
+        
+        # Title
+        title = QLabel("💬 Comment Properties")
+        title.setStyleSheet(TITLE_STYLE)
+        props_layout.addWidget(title)
+        
+        # Text field
+        text_group = self._create_field_group("Text", "textarea")
+        self.comment_text_input = text_group["widget"]
+        self.comment_text_input.setText(item.text)
+        self.comment_text_input.setPlaceholderText("Enter comment text...")
+        self.comment_text_input.setMaximumHeight(100)
+        props_layout.addLayout(text_group["layout"])
+        
+        # Colors section
+        colors_title = QLabel("🎨 Appearance")
+        colors_title.setStyleSheet(SECTION_TITLE_STYLE)
+        props_layout.addWidget(colors_title)
+        
+        # Colors in horizontal layout
+        colors_layout = QHBoxLayout()
+        colors_layout.setSpacing(12)
+        
+        bg_color_group = self._create_field_group("Background", "color")
+        self.comment_bg_color_input = bg_color_group["widget"]
+        self.comment_bg_color_input.setText(item.bg_color.name())
+        self._update_color_button(self.comment_bg_color_input, item.bg_color.name())
+        self.comment_bg_color_input.clicked.connect(lambda: self.pick_color(self.comment_bg_color_input))
+        
+        text_color_group = self._create_field_group("Text", "color")
+        self.comment_text_color_input = text_color_group["widget"]
+        self.comment_text_color_input.setText(item.text_color.name())
+        self._update_color_button(self.comment_text_color_input, item.text_color.name())
+        self.comment_text_color_input.clicked.connect(lambda: self.pick_color(self.comment_text_color_input))
+        
+        colors_layout.addLayout(bg_color_group["layout"])
+        colors_layout.addLayout(text_color_group["layout"])
+        props_layout.addLayout(colors_layout)
+        
+        props_layout.addStretch()
+        props_frame.setLayout(props_layout)
+        
+        # Wrap in scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(props_frame)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        
+        self.stack_widget.addWidget(scroll_area)
+        self.stack_widget.setCurrentWidget(scroll_area)
         
     def _create_field_group(self, label_text, widget_type):
         """Create a consistent field group with label and widget"""
@@ -304,7 +363,8 @@ class ItemProperties(QDockWidget):
             }}
         """)
     
-    def show_properties(self, item: "StateItem | TransitionItem | None"):
+    def show_properties(self, item: "StateItem | TransitionItem | CommentItem | None"):
+        print(item)
         if isinstance(item, StateItem):
             self.state_properties(item)
             self.apply_button.show()
@@ -312,6 +372,11 @@ class ItemProperties(QDockWidget):
             self.apply_button.setDisabled(False)
         elif isinstance(item, TransitionItem):
             self.transition_properties(item)
+            self.apply_button.show()
+            self._selected_item = item
+            self.apply_button.setDisabled(False)
+        elif isinstance(item, CommentItem):
+            self.comment_properties(item)
             self.apply_button.show()
             self._selected_item = item
             self.apply_button.setDisabled(False)
@@ -350,6 +415,11 @@ class ItemProperties(QDockWidget):
             self._selected_item.output_value = self.output_input.text()
             self._selected_item.actions = [action.strip() for action in self.actions_input.toPlainText().split("\n") if action.strip()]
             self._selected_item.updatePath()
+        elif isinstance(self._selected_item, CommentItem):
+            self._selected_item.text = self.comment_text_input.toPlainText()
+            self._selected_item.bg_color = QColor(self.comment_bg_color_input.text())
+            self._selected_item.text_color = QColor(self.comment_text_color_input.text())
+            self._selected_item.update_display()
             
 # Minimalist styling for properties dock
 APPLY_BUTTON_STYLE = """

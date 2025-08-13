@@ -3,6 +3,7 @@ from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
 from PyQt5.QtGui import QPainter, QPen
 from app.ui.items.state import StateItem, FSMModel
 from app.ui.items.transition import TransitionItem
+from app.ui.items.comment import CommentItem
 from app.core.commands import *
 from typing import TYPE_CHECKING
 
@@ -103,6 +104,12 @@ class CanvasView(QGraphicsView):
                 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
                 self.command_manager.execute(command)
+            elif text == "Add Comment":
+                comment = CommentItem("Comment")
+                comment.setPos(pos)
+                
+                command = AddCommentCommand(comment, self.scene)
+                self.command_manager.execute(command)
 
     def mousePressEvent(self, event):
         self.selected_tool = self.parent().getSelectedTool()
@@ -143,6 +150,12 @@ class CanvasView(QGraphicsView):
                 state.setPos(pos)
 
                 command = AddStateCommand(state, self.scene, self.fsm_model)
+                self.command_manager.execute(command)
+            elif self.selected_tool == "add_comment":
+                comment = CommentItem("Comment")
+                comment.setPos(pos)
+                
+                command = AddCommentCommand(comment, self.scene)
                 self.command_manager.execute(command)
 
         if event.button() == Qt.MouseButton.LeftButton and item is not None:
@@ -187,6 +200,10 @@ class CanvasView(QGraphicsView):
             elif isinstance(item, TransitionItem):
                 if self.selected_tool == "delete":
                     command = DeleteCommand(item, self.scene, self.fsm_model)
+                    self.command_manager.execute(command)
+            elif isinstance(item, CommentItem):
+                if self.selected_tool == "delete":
+                    command = DeleteCommand(item, self.scene)
                     self.command_manager.execute(command)
 
 

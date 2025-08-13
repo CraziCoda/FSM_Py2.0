@@ -28,7 +28,7 @@ class Elements(QDockWidget):
             ("Add State", f"{ICONS_PATH}/add.png"),
             ("Add Initial State", f"{ICONS_PATH}/input.png"),
             ("Add Accepting State", f"{ICONS_PATH}/accept.png"),
-            ("Add Comments", f"{ICONS_PATH}/comment.png"),
+            ("Add Comment", f"{ICONS_PATH}/comment.png"),
         ]
 
         for item in items:

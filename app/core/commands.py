@@ -2,6 +2,7 @@ from app.core.logger import ActivityLogger
 from PyQt5.QtWidgets import QGraphicsScene, QAction, QFileDialog, QMessageBox
 from app.ui.items.state import StateItem, FSMModel
 from app.ui.items.transition import TransitionItem
+from app.ui.items.comment import CommentItem
 from utils.constants import DEFAULT_MODEL_PATH
 from app.ui.dialogs.save_machine import SaveMachineDialog
 import json
@@ -105,6 +106,26 @@ class AddStateCommand(BaseCommand):
         self.execute()
 
 
+class AddCommentCommand(BaseCommand):
+    def __init__(self, comment: CommentItem, scene: QGraphicsScene):
+        super().__init__()
+        self.comment: CommentItem = comment
+        self.scene: QGraphicsScene = scene
+        self.calling_class = scene.__class__.__name__
+
+        self.logging_level = "INFO"
+        self.log = f"Added comment: {self.comment.text[:20]}..."
+
+    def execute(self):
+        self.scene.addItem(self.comment)
+
+    def undo(self):
+        self.scene.removeItem(self.comment)
+
+    def redo(self):
+        self.execute()
+
+
 class ToggleInitialStateCommand(BaseCommand):
     def __init__(self, state: StateItem, scene: QGraphicsScene):
         super().__init__()
@@ -150,7 +171,7 @@ class ToggleAcceptingStateCommand(BaseCommand):
 
 
 class DeleteCommand(BaseCommand):
-    def __init__(self, item: StateItem | TransitionItem, scene: QGraphicsScene, model: FSMModel = None):
+    def __init__(self, item: StateItem | TransitionItem | CommentItem, scene: QGraphicsScene, model: FSMModel = None):
         super().__init__()
         self.item = item
         self.scene = scene
@@ -162,6 +183,8 @@ class DeleteCommand(BaseCommand):
             self.log = f"Deleted state: {item.name} with {len(item.transitions)} transitions"
         elif isinstance(item, TransitionItem):
             self.log = f"Deleted transition: From <b>{item.source.name}</b> to <b>{item.destination.name}</b>"
+        elif isinstance(item, CommentItem):
+            self.log = f"Deleted comment: {item.text[:20]}..."
 
     def execute(self):
         if isinstance(self.item, StateItem):
@@ -178,6 +201,8 @@ class DeleteCommand(BaseCommand):
             self.scene.removeItem(self.item.control_points_item)
             self.scene.removeItem(self.item)
             self.model.remove_transition(self.item)
+        elif isinstance(self.item, CommentItem):
+            self.scene.removeItem(self.item)
 
     def undo(self):
         if isinstance(self.item, StateItem):
@@ -190,6 +215,8 @@ class DeleteCommand(BaseCommand):
             self.scene.addItem(self.item)
             self.scene.addItem(self.item.control_points_item)
             self.model.add_transition(self.item)
+        elif isinstance(self.item, CommentItem):
+            self.scene.addItem(self.item)
 
     def redo(self):
         self.execute()
