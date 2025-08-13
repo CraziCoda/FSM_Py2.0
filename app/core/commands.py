@@ -259,7 +259,6 @@ class SaveFSMModelCommand(BaseCommand):
 
             path = json_data["path"]
             with open(path, "w") as f:
-                print(json_data)
                 json.dump(json_data, f, indent=4)
 
             self.log = f"Saved model: {json_data['name']}"

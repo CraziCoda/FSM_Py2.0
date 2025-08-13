@@ -124,13 +124,16 @@ class Simulation:
     def _transition(self, step: bool = False):
         if self.state != SimulationStates.RUNNING and not step:
             return
-        
-                
+
         if self.ticks >= len(self.inputs):
             self.state = SimulationStates.COMPLETED
             self.current_state.stop_animation()
             self.timer.stop()
             self.log("Simulation completed", "INFO")
+            if self.current_state.is_accepting:
+                self.dock.log_to_simulation(f"Accepting state: {self.current_state.name}", "INFO")
+            else:
+                self.dock.log_to_simulation(f"Non-accepting state: {self.current_state.name}", "INFO")
             if self.dock is not None:
                 self.dock.update_status()
             return
@@ -151,6 +154,12 @@ class Simulation:
         self.current_state.stop_animation()
         self.current_state = next_transition.destination
         self.current_state.animate_active()
+        if self.mode == "Moore":
+            self.dock.log_to_simulation(f"Output: {self.current_state.output_value}", "INFO")
+        elif self.mode == "Mealy":
+            output_value = next_transition.output_value
+            self.dock.log_to_simulation(f"Output: {output_value}", "INFO")
+            self.outputs.append(output_value)
 
         if self.dock is not None:
             self.dock.update_status()
