@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem,
                              QGraphicsItemGroup,  QGraphicsTextItem, QGraphicsPolygonItem,
-                             QGraphicsRectItem)
-from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF
+                             QGraphicsRectItem, QGraphicsObject )
+from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF, QPropertyAnimation, QEasingCurve, pyqtProperty, QObject
 from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor, QFont
 from app.ui.dialogs.state_editor import StateEditorDialog
 from app.ui.dialogs.transition_editor import TransitionEditorDialog
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.ui.items.state import TransitionItem
 
 
-class StateItem(QGraphicsItem):
+class StateItem(QGraphicsObject):
     def __init__(self, name, is_initial=False, is_accepting=False, id=None, parent=None):
         super().__init__()
         self.transitions: list[TransitionItem] = []
@@ -127,6 +127,46 @@ class StateItem(QGraphicsItem):
     def updateUI(self):
         self.update()
         self.scene().update()
+    
+    def animate_active(self):
+        """Animate state when it's active during simulation"""
+        self.animation = QPropertyAnimation(self, b"scale")
+        self.animation.setDuration(500)
+        self.animation.setStartValue(1.0)
+        self.animation.setEndValue(1.2)
+        self.animation.setEasingCurve(QEasingCurve.InOutQuad)
+        self.animation.finished.connect(self._animate_active_reverse)
+        self.animation.start()
+    
+    def _animate_active_reverse(self):
+        """Reverse animation for active state"""
+        self.animation = QPropertyAnimation(self, b"scale")
+        self.animation.setDuration(500)
+        self.animation.setStartValue(1.2)
+        self.animation.setEndValue(1.0)
+        self.animation.setEasingCurve(QEasingCurve.InOutQuad)
+        self.animation.start()
+    
+    def animate_highlight(self):
+        """Highlight animation for current state"""
+        original_color = self.border_color
+        self.border_color = QColor("#ff6b35")
+        self.update()
+        
+        # Reset color after animation
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(1000, lambda: self._reset_highlight(original_color))
+    
+    def _reset_highlight(self, original_color):
+        """Reset highlight color"""
+        self.border_color = original_color
+        self.update()
+    
+    def stop_animation(self):
+        """Stop all animations"""
+        if hasattr(self, 'animation') and self.animation:
+            self.animation.stop()
+        self.setScale(1.0)
 
 
 class TransitionItem(QGraphicsPathItem):
@@ -165,7 +205,7 @@ class TransitionItem(QGraphicsPathItem):
             self.updatePath()
             self.control_points_item.reinit()
             self.label_item.updateUI()
-
+                
     def updatePath(self):
         if self.source == self.destination:
             p2 = self.source.sceneBoundingRect().center()
