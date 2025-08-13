@@ -332,12 +332,18 @@ class SimulationDock(QDockWidget):
             self, "Select Input File", "", "Text Files (*.txt);;All Files (*)")
 
         if file_path:
-            import os
-            filename = os.path.basename(file_path)
-            self.label_input_status.setText(f"✓ {filename}")
-            self.label_input_status.setStyleSheet(SUCCESS_LABEL_STYLE)
-            self.input_button.setText("📁 Change File")
-            self.file_path = file_path
+            try:
+                with open(file_path, 'r') as f:
+                    self.file_content = f.read()
+                import os
+                filename = os.path.basename(file_path)
+                self.label_input_status.setText(f"✓ {filename}")
+                self.label_input_status.setStyleSheet(SUCCESS_LABEL_STYLE)
+                self.input_button.setText("📁 Change File")
+                self.file_path = file_path
+            except Exception as e:
+                self.label_input_status.setText(f"Error reading file: {str(e)}")
+                self.label_input_status.setStyleSheet(STATUS_LABEL_STYLE)
         else:
             self.label_input_status.setText("No file selected")
             self.label_input_status.setStyleSheet(STATUS_LABEL_STYLE)
@@ -354,11 +360,25 @@ class SimulationDock(QDockWidget):
             input_string = self.string_input_edit.text()
             speed = self.speed_input.value()
             delimiter = self.delimiter_input.text()
-
             is_keyboard_inputs = False
             
             self.simulation.start(input_string, simulation_mode, delimiter, speed, is_keyboard_inputs)
-            self.update_status()
+        elif input_mode == "File":
+            if hasattr(self, 'file_content'):
+                speed = self.speed_input_file.value()
+                delimiter = self.delimiter_input_file.text()
+                is_keyboard_inputs = False
+                
+                self.simulation.start(self.file_content, simulation_mode, delimiter, speed, is_keyboard_inputs)
+        elif input_mode == "Keyboard":
+            input_string = ""
+            speed = 1.0
+            delimiter = ""
+            is_keyboard_inputs = True
+            
+            self.simulation.start(input_string, simulation_mode, delimiter, speed, is_keyboard_inputs)
+            
+        self.update_status()
 
     def update_status(self):
         self.current_status.setText(self.simulation.state.name)
