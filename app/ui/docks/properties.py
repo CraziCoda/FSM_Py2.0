@@ -115,6 +115,34 @@ class ItemProperties(QDockWidget):
         style_layout.addLayout(color_group["layout"])
         props_layout.addLayout(style_layout)
         
+        # Simulation section
+        sim_title = QLabel("⚙️ Simulation")
+        sim_title.setStyleSheet(SECTION_TITLE_STYLE)
+        props_layout.addWidget(sim_title)
+        
+        # Output value field
+        output_group = self._create_field_group("Output Value", "text")
+        self.output_input = output_group["widget"]
+        self.output_input.setText(item.output_value)
+        self.output_input.setPlaceholderText("Moore output...")
+        props_layout.addLayout(output_group["layout"])
+        
+        # Entry actions field
+        entry_group = self._create_field_group("Entry Actions", "textarea")
+        self.entry_input = entry_group["widget"]
+        self.entry_input.setText("\n".join(item.entry_actions))
+        self.entry_input.setPlaceholderText("One per line...")
+        self.entry_input.setMaximumHeight(60)
+        props_layout.addLayout(entry_group["layout"])
+        
+        # Exit actions field
+        exit_group = self._create_field_group("Exit Actions", "textarea")
+        self.exit_input = exit_group["widget"]
+        self.exit_input.setText("\n".join(item.exit_actions))
+        self.exit_input.setPlaceholderText("One per line...")
+        self.exit_input.setMaximumHeight(60)
+        props_layout.addLayout(exit_group["layout"])
+        
         props_layout.addStretch()
         props_frame.setLayout(props_layout)
         
@@ -174,6 +202,40 @@ class ItemProperties(QDockWidget):
         colors_layout.addLayout(line_color_group["layout"])
         colors_layout.addLayout(control_color_group["layout"])
         props_layout.addLayout(colors_layout)
+        
+        # Simulation section
+        sim_title = QLabel("⚙️ Simulation")
+        sim_title.setStyleSheet(SECTION_TITLE_STYLE)
+        props_layout.addWidget(sim_title)
+        
+        # Input symbols field
+        input_group = self._create_field_group("Input Symbols", "text")
+        self.input_symbols_input = input_group["widget"]
+        self.input_symbols_input.setText(",".join(item.input_symbols))
+        self.input_symbols_input.setPlaceholderText("Comma-separated...")
+        props_layout.addLayout(input_group["layout"])
+        
+        # Guard condition field
+        guard_group = self._create_field_group("Guard Condition", "text")
+        self.guard_input = guard_group["widget"]
+        self.guard_input.setText(item.guard_condition)
+        self.guard_input.setPlaceholderText("Boolean condition...")
+        props_layout.addLayout(guard_group["layout"])
+        
+        # Output value field
+        output_group = self._create_field_group("Output Value", "text")
+        self.output_input = output_group["widget"]
+        self.output_input.setText(item.output_value)
+        self.output_input.setPlaceholderText("Mealy output...")
+        props_layout.addLayout(output_group["layout"])
+        
+        # Actions field
+        actions_group = self._create_field_group("Actions", "textarea")
+        self.actions_input = actions_group["widget"]
+        self.actions_input.setText("\n".join(item.actions))
+        self.actions_input.setPlaceholderText("One per line...")
+        self.actions_input.setMaximumHeight(60)
+        props_layout.addLayout(actions_group["layout"])
         
         props_layout.addStretch()
         props_frame.setLayout(props_layout)
@@ -258,12 +320,19 @@ class ItemProperties(QDockWidget):
             self._selected_item.bg_color = QColor(self.state_color_input.text())
             self._selected_item.is_initial = self.initial_input.isChecked()
             self._selected_item.is_accepting = self.accepting_input.isChecked()
+            self._selected_item.output_value = self.output_input.text()
+            self._selected_item.entry_actions = [action.strip() for action in self.entry_input.toPlainText().split("\n") if action.strip()]
+            self._selected_item.exit_actions = [action.strip() for action in self.exit_input.toPlainText().split("\n") if action.strip()]
             self._selected_item.updateUI()
         elif isinstance(self._selected_item, TransitionItem):
             self._selected_item.label = self.name_input.text()
             self._selected_item.width = self.line_width_input.value()
             self._selected_item.color = QColor(self.line_color_input.text())
             self._selected_item.control_point_color = QColor(self.control_point_color_input.text())
+            self._selected_item.input_symbols = [s.strip() for s in self.input_symbols_input.text().split(",") if s.strip()]
+            self._selected_item.guard_condition = self.guard_input.text()
+            self._selected_item.output_value = self.output_input.text()
+            self._selected_item.actions = [action.strip() for action in self.actions_input.toPlainText().split("\n") if action.strip()]
             self._selected_item.updatePath()
             
 # Minimalist styling for properties dock

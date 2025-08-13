@@ -127,8 +127,41 @@ class StateEditorDialog(QDialog):
         appearance_layout.addStretch()
         self.appearance_tab.setLayout(appearance_layout)
 
+        # Simulation tab
+        self.simulation_tab = QFrame()
+        simulation_layout = QVBoxLayout()
+        simulation_layout.setContentsMargins(16, 16, 16, 16)
+        simulation_layout.setSpacing(16)
+        
+        # Output value field
+        output_group = self._create_field_group("Output Value (Moore)", "text")
+        self.output_input = output_group["widget"]
+        self.output_input.setText(state.output_value)
+        self.output_input.setPlaceholderText("Enter output value...")
+        simulation_layout.addLayout(output_group["layout"])
+        
+        # Entry actions field
+        entry_group = self._create_field_group("Entry Actions", "textarea")
+        self.entry_input = entry_group["widget"]
+        self.entry_input.setText("\n".join(state.entry_actions))
+        self.entry_input.setPlaceholderText("Enter actions (one per line)...")
+        self.entry_input.setMaximumHeight(80)
+        simulation_layout.addLayout(entry_group["layout"])
+        
+        # Exit actions field
+        exit_group = self._create_field_group("Exit Actions", "textarea")
+        self.exit_input = exit_group["widget"]
+        self.exit_input.setText("\n".join(state.exit_actions))
+        self.exit_input.setPlaceholderText("Enter actions (one per line)...")
+        self.exit_input.setMaximumHeight(80)
+        simulation_layout.addLayout(exit_group["layout"])
+        
+        simulation_layout.addStretch()
+        self.simulation_tab.setLayout(simulation_layout)
+
         tabs.addTab(self.general_tab, "📝 General")
         tabs.addTab(self.appearance_tab, "🎨 Appearance")
+        tabs.addTab(self.simulation_tab, "⚙️ Simulation")
         main_layout.addWidget(tabs)
 
         # Action buttons
@@ -214,6 +247,9 @@ class StateEditorDialog(QDialog):
         self.state.is_accepting = self.accepting_input.isChecked()
         self.state.comment = self.comment_input.toPlainText()
         self.state.border_width = self.border_width_input.value()
+        self.state.output_value = self.output_input.text()
+        self.state.entry_actions = [action.strip() for action in self.entry_input.toPlainText().split("\n") if action.strip()]
+        self.state.exit_actions = [action.strip() for action in self.exit_input.toPlainText().split("\n") if action.strip()]
         self.state.updateUI()
         self.accept()
 

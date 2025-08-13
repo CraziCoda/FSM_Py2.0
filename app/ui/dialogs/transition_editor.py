@@ -14,7 +14,7 @@ class TransitionEditorDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("✏️ Edit Transition")
-        self.setFixedHeight(450)
+        self.setFixedHeight(550)
         self.setFixedWidth(480)
         self.setStyleSheet(DIALOG_STYLE)
 
@@ -84,8 +84,46 @@ class TransitionEditorDialog(QDialog):
         general_layout.addStretch()
         self.general_tab.setLayout(general_layout)
 
+        # Simulation tab
+        self.simulation_tab = QFrame()
+        simulation_layout = QVBoxLayout()
+        simulation_layout.setContentsMargins(16, 16, 16, 16)
+        simulation_layout.setSpacing(16)
+        
+        # Input symbols field
+        input_group = self._create_field_group("Input Symbols", "text")
+        self.input_symbols_input = input_group["widget"]
+        self.input_symbols_input.setText(",".join(self.transition.input_symbols))
+        self.input_symbols_input.setPlaceholderText("Enter symbols (comma-separated)...")
+        simulation_layout.addLayout(input_group["layout"])
+        
+        # Guard condition field
+        guard_group = self._create_field_group("Guard Condition", "text")
+        self.guard_input = guard_group["widget"]
+        self.guard_input.setText(self.transition.guard_condition)
+        self.guard_input.setPlaceholderText("Enter boolean condition...")
+        simulation_layout.addLayout(guard_group["layout"])
+        
+        # Output value field
+        output_group = self._create_field_group("Output Value (Mealy)", "text")
+        self.output_input = output_group["widget"]
+        self.output_input.setText(self.transition.output_value)
+        self.output_input.setPlaceholderText("Enter output value...")
+        simulation_layout.addLayout(output_group["layout"])
+        
+        # Actions field
+        actions_group = self._create_field_group("Actions", "textarea")
+        self.actions_input = actions_group["widget"]
+        self.actions_input.setText("\n".join(self.transition.actions))
+        self.actions_input.setPlaceholderText("Enter actions (one per line)...")
+        self.actions_input.setMaximumHeight(120)
+        simulation_layout.addLayout(actions_group["layout"])
+        
+        simulation_layout.addStretch()
+        self.simulation_tab.setLayout(simulation_layout)
 
         tabs.addTab(self.general_tab, "📝 Properties")
+        tabs.addTab(self.simulation_tab, "⚙️ Simulation")
         main_layout.addWidget(tabs)
 
         # Action buttons
@@ -118,6 +156,9 @@ class TransitionEditorDialog(QDialog):
         if widget_type == "text":
             widget = QLineEdit()
             widget.setStyleSheet(INPUT_STYLE)
+        elif widget_type == "textarea":
+            widget = QTextEdit()
+            widget.setStyleSheet(TEXTAREA_STYLE)
         elif widget_type == "spinbox":
             widget = QDoubleSpinBox()
             widget.setStyleSheet(SPINBOX_STYLE)
@@ -161,6 +202,10 @@ class TransitionEditorDialog(QDialog):
     def save_changes(self):
         self.transition.width = self.line_width_input.value()
         self.transition.label = self.label_name_input.text()
+        self.transition.input_symbols = [s.strip() for s in self.input_symbols_input.text().split(",") if s.strip()]
+        self.transition.guard_condition = self.guard_input.text()
+        self.transition.output_value = self.output_input.text()
+        self.transition.actions = [action.strip() for action in self.actions_input.toPlainText().split("\n") if action.strip()]
         self.transition.updatePath()
         self.accept()
 
@@ -242,6 +287,21 @@ QLineEdit {
 }
 
 QLineEdit:focus {
+    border-color: #2596be;
+    outline: none;
+}
+"""
+
+TEXTAREA_STYLE = """
+QTextEdit {
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    background: white;
+    font-size: 13px;
+}
+
+QTextEdit:focus {
     border-color: #2596be;
     outline: none;
 }
