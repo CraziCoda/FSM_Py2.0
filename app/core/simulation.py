@@ -51,12 +51,16 @@ class Simulation:
         if len(self.fsm_model.input_alphabet) == 0:
             self.inputs = input.split(delimiter)
 
+        self.current_state = initial_states[0]
         self.speed = speed
         self.mode = mode
         self.using_keyboard_inputs = is_keyboard_inputs
+        self.ticks = 0
+        self.outputs = []
         self.state = SimulationStates.RUNNING
 
-        self.log(f"Simulation started", "INFO")
+        self.log(f"Simulation started in {mode} mode", "INFO")
+        self.log(f"Initial state: {self.current_state.name}", "INFO")
 
         if self.dock is not None:
             self.dock.update_status()
@@ -70,6 +74,9 @@ class Simulation:
         if self.state != SimulationStates.PAUSED:
             return
         self.state = SimulationStates.RUNNING
+        self.log("Simulation resumed", "INFO")
+        if self.dock is not None:
+            self.dock.update_status()
 
     def step(self):
         if self.state != SimulationStates.RUNNING:
@@ -79,6 +86,13 @@ class Simulation:
         if self.state == SimulationStates.IDLE:
             return
         self.state = SimulationStates.IDLE
+        self.current_state = None
+        self.ticks = 0
+        self.outputs = []
+        self.log("Simulation stopped", "INFO")
+        
+        if self.dock is not None:
+            self.dock.update_status()
 
     def log(self, message: str, log_level: str = "INFO"):
         if self.dock is not None:

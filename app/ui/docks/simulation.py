@@ -235,12 +235,14 @@ class SimulationDock(QDockWidget):
         self.pause_button.setToolTip("Pause Simulation")
         self.pause_button.setStyleSheet(CONTROL_BUTTON_STYLE)
         self.pause_button.setFixedSize(36, 36)
+        self.pause_button.clicked.connect(self.pause_simulation)
         
         self.stop_button = QPushButton()
         self.stop_button.setIcon(QIcon(f"{ICONS_PATH}/stop.png"))
         self.stop_button.setToolTip("Stop Simulation")
         self.stop_button.setStyleSheet(CONTROL_BUTTON_STYLE)
         self.stop_button.setFixedSize(36, 36)
+        self.stop_button.clicked.connect(self.stop_simulation)
         
         self.reset_button = QPushButton()
         self.reset_button.setIcon(QIcon(f"{ICONS_PATH}/fast.png"))
@@ -379,10 +381,41 @@ class SimulationDock(QDockWidget):
             self.simulation.start(input_string, simulation_mode, delimiter, speed, is_keyboard_inputs)
             
         self.update_status()
+    
+    def pause_simulation(self):
+        self.simulation.pause()
+        self.update_status()
+    
+    def stop_simulation(self):
+        self.simulation.stop()
+        self.update_status()
 
     def update_status(self):
         self.current_status.setText(self.simulation.state.name)
         self.current_tick.setText(str(self.simulation.ticks))
+        
+        if self.simulation.current_state:
+            self.current_state_name.setText(self.simulation.current_state.name)
+        else:
+            self.current_state_name.setText("None")
+            
+        self._update_ui_state()
+    
+    def _update_ui_state(self):
+        is_running = self.simulation.state in [SimulationStates.RUNNING, SimulationStates.PAUSED]
+        
+        # Disable input controls during simulation
+        self.fsm_mode_combobox.setEnabled(not is_running)
+        self.input_mode_combobox.setEnabled(not is_running)
+        self.string_input_edit.setEnabled(not is_running)
+        self.speed_input.setEnabled(not is_running)
+        self.delimiter_input.setEnabled(not is_running)
+        self.input_button.setEnabled(not is_running)
+        
+        # Update button states
+        self.start_button.setEnabled(self.simulation.state in [SimulationStates.IDLE, SimulationStates.PAUSED, SimulationStates.COMPLETED, SimulationStates.ERROR])
+        self.pause_button.setEnabled(self.simulation.state == SimulationStates.RUNNING)
+        self.stop_button.setEnabled(is_running)
 
 
 # Minimalist styling
