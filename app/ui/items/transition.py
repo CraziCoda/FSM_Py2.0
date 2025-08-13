@@ -1,9 +1,7 @@
-from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPathItem, QGraphicsEllipseItem,
-                             QGraphicsItemGroup,  QGraphicsTextItem, QGraphicsPolygonItem,
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsItemGroup,  QGraphicsTextItem, QGraphicsPolygonItem,
                              QGraphicsRectItem, QGraphicsObject )
-from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF, QPropertyAnimation, QEasingCurve, pyqtProperty, QObject, QTimer
-from PyQt5.QtGui import QPen, QBrush, QPainterPath, QPolygonF, QPainter, QColor, QFont
-from app.ui.dialogs.state_editor import StateEditorDialog
+from PyQt5.QtCore import QRectF, Qt, QPointF, QPropertyAnimation, QEasingCurve, pyqtProperty
+from PyQt5.QtGui import QPen, QPainterPath, QPolygonF, QColor, QFont
 from app.ui.dialogs.transition_editor import TransitionEditorDialog
 
 import math
