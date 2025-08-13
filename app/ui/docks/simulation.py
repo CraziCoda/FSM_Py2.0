@@ -361,7 +361,7 @@ class SimulationDock(QDockWidget):
         if input_mode == "String":
             input_string = self.string_input_edit.text()
             speed = self.speed_input.value()
-            delimiter = self.delimiter_input.text()
+            delimiter = "" if self.delimiter_group.checkedButton().text() == "Per Char" else self.delimiter_input.text()
             is_keyboard_inputs = False
             
             self.simulation.start(input_string, simulation_mode, delimiter, speed, is_keyboard_inputs)
@@ -416,6 +416,20 @@ class SimulationDock(QDockWidget):
         self.start_button.setEnabled(self.simulation.state in [SimulationStates.IDLE, SimulationStates.PAUSED, SimulationStates.COMPLETED, SimulationStates.ERROR])
         self.pause_button.setEnabled(self.simulation.state == SimulationStates.RUNNING)
         self.stop_button.setEnabled(is_running)
+    
+    def log_to_simulation(self, message: str, level: str = "INFO"):
+        """Log a message to the simulation console"""
+        if level == "ERROR":
+            color = "#e74c3c"
+        elif level == "WARNING":
+            color = "#f39c12"
+        else:
+            color = "#27ae60"
+        
+        self.console.append(
+            f'<span style="color: {color}; font-weight: 600;">[{level}]</span> '
+            f'<span style="color: #e0e0e0;">{message}</span>'
+        )
 
 
 # Minimalist styling

@@ -1,6 +1,8 @@
 from enum import Enum
 from app.ui.items.state import FSMModel
 from typing import TYPE_CHECKING
+from PyQt5.QtCore import QTimer
+
 
 if TYPE_CHECKING:
     from app.ui.docks.simulation import SimulationDock
@@ -27,7 +29,12 @@ class Simulation:
         self.mode = "Moore"
         self.dock = dock
 
-    def start(self, input: str, mode: str = "Moore", delimiter: str = ",", speed: int = 1,  is_keyboard_inputs: bool = False):
+        self.timer = QTimer()
+        self.timer.timeout.connect(self._transition)
+
+    def start(self, input: str, mode: str = "Moore", delimiter: str = "", speed: int = 1,  is_keyboard_inputs: bool = False):
+        self.fsm_model = self.dock.parent_window.canvas.fsm_model
+
         if self.state != SimulationStates.IDLE and self.state != SimulationStates.COMPLETED and self.state != SimulationStates.ERROR:
             return
 
@@ -40,16 +47,14 @@ class Simulation:
             self.state = SimulationStates.ERROR
             self.log(f"Multiple initial states: {[s.name for s in initial_states]}", "ERROR")
             return
+    
+        self.inputs = [char for char in input] if delimiter == "" else input.split(delimiter)
         
         if len(self.fsm_model.input_alphabet) != 0 and is_keyboard_inputs == False:
-            if self.fsm_model.input_alphabet.issuperset(self.inputs):
-                self.inputs = input.split(delimiter)
-            else:
+            if not self.fsm_model.input_alphabet.issuperset(self.inputs):
                 self.state = SimulationStates.ERROR
                 self.log(f"Input alphabet does not match the input: {input}", "ERROR")
                 return
-        if len(self.fsm_model.input_alphabet) == 0:
-            self.inputs = input.split(delimiter)
 
         self.current_state = initial_states[0]
         self.speed = speed
@@ -58,6 +63,9 @@ class Simulation:
         self.ticks = 0
         self.outputs = []
         self.state = SimulationStates.RUNNING
+        self.current_state.animate_active()
+
+        self.timer.start(int(1000 * speed))
 
         self.log(f"Simulation started in {mode} mode", "INFO")
         self.log(f"Initial state: {self.current_state.name}", "INFO")
@@ -97,3 +105,45 @@ class Simulation:
     def log(self, message: str, log_level: str = "INFO"):
         if self.dock is not None:
             self.dock.parent_window.logger.log(message, self.__class__.__name__, log_level)
+
+
+    def _transition(self):
+        if self.state != SimulationStates.RUNNING:
+            return
+        
+        
+        if self.ticks >= len(self.inputs):
+            self.state = SimulationStates.COMPLETED
+            self.current_state.stop_animation()
+            self.timer.stop()
+            self.log("Simulation completed", "INFO")
+            if self.dock is not None:
+                self.dock.update_status()
+            return
+
+        next_transition = self.find_transition()
+        self.ticks += 1
+
+        if next_transition is None:
+            self.state = SimulationStates.ERROR
+            self.log(f"No transition found for input {self.inputs[self.ticks - 1]}", "ERROR")
+            self.current_state.stop_animation()
+            self.timer.stop()
+            if self.dock is not None:
+                self.dock.update_status()
+            return
+        
+        next_transition.animate_simulation_flow()
+        self.current_state.stop_animation()
+        self.current_state = next_transition.destination
+        self.current_state.animate_active()
+
+        if self.dock is not None:
+            self.dock.update_status()
+        
+    def find_transition(self):
+        for transition in self.current_state.transitions:
+            if self.inputs[self.ticks] in transition.input_symbols:
+                return transition
+            
+        return None

@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPolygonItem, QGraphicsObjec
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QPen, QBrush, QPolygonF, QColor
 from app.ui.dialogs.state_editor import StateEditorDialog
+from app.ui.items.transition import TransitionItem
 
 import uuid
 from typing import TYPE_CHECKING
@@ -130,13 +131,32 @@ class StateItem(QGraphicsObject):
         self.scene().update()
 
     def animate_active(self):
-        """Animate state when it's active during simulation"""
+        """Start continuous animation for active state"""
+        self._is_animating = True
+        self._animate_scale_up()
+
+    def _animate_scale_up(self):
+        """Scale up animation"""
+        if not hasattr(self, '_is_animating') or not self._is_animating:
+            return
         self.animation = QPropertyAnimation(self, b"scale")
         self.animation.setDuration(500)
         self.animation.setStartValue(1.0)
         self.animation.setEndValue(1.2)
         self.animation.setEasingCurve(QEasingCurve.InOutQuad)
-        self.animation.finished.connect(self._animate_active_reverse)
+        self.animation.finished.connect(self._animate_scale_down)
+        self.animation.start()
+
+    def _animate_scale_down(self):
+        """Scale down animation"""
+        if not hasattr(self, '_is_animating') or not self._is_animating:
+            return
+        self.animation = QPropertyAnimation(self, b"scale")
+        self.animation.setDuration(500)
+        self.animation.setStartValue(1.2)
+        self.animation.setEndValue(1.0)
+        self.animation.setEasingCurve(QEasingCurve.InOutQuad)
+        self.animation.finished.connect(self._animate_scale_up)
         self.animation.start()
 
     def _animate_active_reverse(self):
@@ -165,6 +185,7 @@ class StateItem(QGraphicsObject):
 
     def stop_animation(self):
         """Stop all animations"""
+        self._is_animating = False
         if hasattr(self, 'animation') and self.animation:
             self.animation.stop()
         self.setScale(1.0)
@@ -328,8 +349,10 @@ class FSMModel:
             transition.width = props.get("width", 2)
             cp_props = props.get("control_point", {})
             transition.control_point_color = QColor(cp_props.get("color", "#1e81b0"))
+            transition.control_point = QPointF(cp_props.get("x", 0), cp_props.get("y", 0))
             transition.input_symbols = transition_json.get("input_symbols", [])
             transition.guard_condition = transition_json.get("guard_condition", "")
             transition.output_value = transition_json.get("output_value", "")
             transition.actions = transition_json.get("actions", [])
             self.add_transition(transition)
+            

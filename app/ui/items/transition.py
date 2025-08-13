@@ -62,9 +62,11 @@ class TransitionItem(QGraphicsObject):
 
     def reinit(self):
         if self.scene() is not None:
-            self.updatePath()
             self.control_points_item.reinit()
+            if hasattr(self, "control_point"):
+                self.control_points_item.setPos(self.control_point)
             self.label_item.updateUI()
+            self.updatePath()
                 
     def updatePath(self):
         if self.source == self.destination:
