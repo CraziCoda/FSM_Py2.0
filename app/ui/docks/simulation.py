@@ -249,6 +249,7 @@ class SimulationDock(QDockWidget):
         self.reset_button.setToolTip("Step Forward")
         self.reset_button.setStyleSheet(CONTROL_BUTTON_STYLE)
         self.reset_button.setFixedSize(36, 36)
+        self.reset_button.clicked.connect(self.step_simulation)
 
         control_group_box_layout.addWidget(self.start_button)
         control_group_box_layout.addWidget(self.pause_button)
@@ -388,6 +389,10 @@ class SimulationDock(QDockWidget):
     
     def stop_simulation(self):
         self.simulation.stop()
+        self.update_status()
+
+    def step_simulation(self):
+        self.simulation.step()
         self.update_status()
 
     def update_status(self):

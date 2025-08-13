@@ -76,19 +76,33 @@ class Simulation:
     def pause(self):
         if self.state != SimulationStates.RUNNING:
             return
+        
+        self.current_state.stop_animation()
+        self.timer.stop()
+        self.log("Simulation paused", "INFO")
         self.state = SimulationStates.PAUSED
+
+        if self.dock is not None:
+            self.dock.update_status()
 
     def resume(self):
         if self.state != SimulationStates.PAUSED:
             return
+        
+        self.timer.start(int(1000 * self.speed))
+        self.current_state.animate_active()
         self.state = SimulationStates.RUNNING
         self.log("Simulation resumed", "INFO")
         if self.dock is not None:
             self.dock.update_status()
 
     def step(self):
-        if self.state != SimulationStates.RUNNING:
+        if self.state != SimulationStates.PAUSED:
             return
+        
+        self._transition(step=True)
+        if self.dock is not None:
+            self.dock.update_status()
 
     def stop(self):
         if self.state == SimulationStates.IDLE:
@@ -107,11 +121,11 @@ class Simulation:
             self.dock.parent_window.logger.log(message, self.__class__.__name__, log_level)
 
 
-    def _transition(self):
-        if self.state != SimulationStates.RUNNING:
+    def _transition(self, step: bool = False):
+        if self.state != SimulationStates.RUNNING and not step:
             return
         
-        
+                
         if self.ticks >= len(self.inputs):
             self.state = SimulationStates.COMPLETED
             self.current_state.stop_animation()
