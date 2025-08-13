@@ -1,19 +1,26 @@
 from PyQt5.QtWidgets import (
-    QDockWidget, QFrame, QVBoxLayout, QGroupBox, QGridLayout, QLabel, QComboBox, QStackedWidget,
+    QDockWidget, QFrame, QVBoxLayout, QGroupBox, QLabel, QComboBox, QStackedWidget,
     QLineEdit, QRadioButton, QButtonGroup, QDoubleSpinBox, QPushButton, QHBoxLayout, QTextEdit,
-    QFileDialog, QSizePolicy
+    QFileDialog
 )
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
+from app.core.simulation import Simulation, SimulationStates
 
 from utils.constants import ICONS_PATH
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.ui.main_window import MainWindow
 
 
 class SimulationDock(QDockWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: "MainWindow" = None):
         super().__init__("Simulation", parent)
         self.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
         self.setMinimumWidth(280)
+        self.parent_window = parent
+        self.simulation = Simulation(parent.canvas.fsm_model, self)
 
         main_frame = QFrame()
         main_layout = QVBoxLayout()
@@ -221,6 +228,7 @@ class SimulationDock(QDockWidget):
         self.start_button.setToolTip("Start Simulation")
         self.start_button.setStyleSheet(CONTROL_BUTTON_STYLE)
         self.start_button.setFixedSize(36, 36)
+        self.start_button.clicked.connect(self.play_button_click)
         
         self.pause_button = QPushButton()
         self.pause_button.setIcon(QIcon(f"{ICONS_PATH}/pause.png"))
@@ -333,6 +341,28 @@ class SimulationDock(QDockWidget):
         else:
             self.label_input_status.setText("No file selected")
             self.label_input_status.setStyleSheet(STATUS_LABEL_STYLE)
+
+    def play_button_click(self):
+        if self.simulation.state == SimulationStates.PAUSED:
+            self.simulation.resume()
+            return
+
+        input_mode = self.input_mode_combobox.currentText()
+        simulation_mode = self.fsm_mode_combobox.currentText()
+
+        if input_mode == "String":
+            input_string = self.string_input_edit.text()
+            speed = self.speed_input.value()
+            delimiter = self.delimiter_input.text()
+
+            is_keyboard_inputs = False
+            
+            self.simulation.start(input_string, simulation_mode, delimiter, speed, is_keyboard_inputs)
+            self.update_status()
+
+    def update_status(self):
+        self.current_status.setText(self.simulation.state.name)
+        self.current_tick.setText(str(self.simulation.ticks))
 
 
 # Minimalist styling
