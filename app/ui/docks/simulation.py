@@ -406,6 +406,20 @@ class SimulationDock(QDockWidget):
             
         self._update_ui_state()
     
+    def apply_preset(self, preset):
+        """Apply simulation preset to the dock"""
+        # Set input mode to string
+        self.input_mode_combobox.setCurrentText("String")
+        self.switch_input(0)
+        
+        # Apply preset values
+        self.string_input_edit.setText(preset['input'])
+        self.fsm_mode_combobox.setCurrentText(preset['mode'])
+        self.speed_input.setValue(preset['speed'])
+        
+        # Switch to simulation dock
+        self.parent_window.simulation_dock.raise_()
+    
     def _update_ui_state(self):
         is_running = self.simulation.state in [SimulationStates.RUNNING, SimulationStates.PAUSED]
         
@@ -435,6 +449,19 @@ class SimulationDock(QDockWidget):
             f'<span style="color: {color}; font-weight: 600;">[{level}]</span> '
             f'<span style="color: #e0e0e0;">{message}</span>'
         )
+        
+        # Store results for export
+        if not hasattr(self, 'last_results'):
+            self.last_results = []
+        
+        if level == "INFO" and "Output:" in message:
+            result = {
+                'step': len(self.last_results),
+                'input': getattr(self.simulation, 'current_input', ''),
+                'state': self.simulation.current_state.name if self.simulation.current_state else '',
+                'output': message.split("Output: ")[1] if "Output: " in message else ''
+            }
+            self.last_results.append(result)
 
 
 # Minimalist styling
