@@ -49,6 +49,9 @@ class CanvasView(QGraphicsView):
         for transition in self.fsm_model.transitions:
             self.scene.addItem(transition)
             transition.reinit()
+            
+        for comment in self.fsm_model.comments:
+            self.scene.addItem(comment)
 
         self.parent_window.validator.set_model(self.fsm_model)
     

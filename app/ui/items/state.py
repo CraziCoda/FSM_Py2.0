@@ -199,6 +199,7 @@ class FSMModel:
         self.is_saved = True
         self.states: list[StateItem] = []
         self.transitions: list[TransitionItem] = []
+        self.comments: list = []
         
         # Simulation properties
         self.input_alphabet = set()      # Valid input symbols
@@ -211,6 +212,17 @@ class FSMModel:
     def add_transition(self, transition: "TransitionItem"):
         self.transitions.append(transition)
         self.is_saved = False
+        
+    def add_comment(self, comment):
+        self.comments.append(comment)
+        self.is_saved = False
+        
+    def remove_comment(self, comment):
+        try:
+            self.comments.remove(comment)
+            self.is_saved = False
+        except ValueError:
+            pass
 
     def remove_state(self, state: StateItem):
         try:
@@ -297,8 +309,25 @@ class FSMModel:
 
             transitions_json.append(transition_json)
 
+        # Add comments to JSON
+        comments_json = []
+        for comment in self.comments:
+            comment_json = {
+                "id": comment.id,
+                "text": comment.text,
+                "properties": {
+                    "x": comment.pos().x(),
+                    "y": comment.pos().y(),
+                    "bg_color": comment.bg_color.name(),
+                    "text_color": comment.text_color.name(),
+                    "border_color": comment.border_color.name()
+                }
+            }
+            comments_json.append(comment_json)
+
         model_json["states"] = states_json
         model_json["transitions"] = transitions_json
+        model_json["comments"] = comments_json
 
         return model_json
 
@@ -312,6 +341,7 @@ class FSMModel:
 
         self.states = []
         self.transitions = []
+        self.comments = []
 
     def get_state_by_id(self, state_id):
         for state in self.states:
@@ -355,4 +385,16 @@ class FSMModel:
             transition.output_value = transition_json.get("output_value", "")
             transition.actions = transition_json.get("actions", [])
             self.add_transition(transition)
+            
+        # Load comments
+        from app.ui.items.comment import CommentItem
+        for comment_json in model_json.get("comments", []):
+            comment = CommentItem(comment_json.get("text", "Comment"))
+            comment.id = comment_json.get("id", comment.id)
+            props = comment_json.get("properties", {})
+            comment.setPos(props.get("x", 0), props.get("y", 0))
+            comment.bg_color = QColor(props.get("bg_color", "#ffffcc"))
+            comment.text_color = QColor(props.get("text_color", "#000000"))
+            comment.border_color = QColor(props.get("border_color", "#cccccc"))
+            self.comments.append(comment)
             
