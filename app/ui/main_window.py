@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QActionGroup, QFrame, QSplitter, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QActionGroup, QFrame, QSplitter, QHBoxLayout, QMessageBox
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from app.ui.docks.elements import Elements
@@ -37,6 +37,8 @@ class MainWindow(QMainWindow):
 
         file_menu = menu.addMenu("File")
         new_action = QAction("New", self)
+        new_action.triggered.connect(self.clear_fsm)
+        new_action.setShortcut("Ctrl+N")
 
         open_action = QAction("Open", self)
         open_action.triggered.connect(lambda: self.canvas.command_manager.execute(OpenMachine(self.canvas.fsm_model, self.canvas)))
@@ -216,6 +218,23 @@ class MainWindow(QMainWindow):
         """Show assistant configuration dialog"""
         dialog = AssistantConfigDialog(self)
         dialog.exec_()
+    
+    def clear_fsm(self):
+        """Clear the current FSM and create a new empty one"""
+        if not self.canvas.fsm_model.is_saved:
+            reply = QMessageBox.question(
+                self, "Unsaved Changes", 
+                "You have unsaved changes. Are you sure you want to create a new FSM?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+        
+        from app.ui.items.state import FSMModel
+        new_model = FSMModel()
+        self.canvas.set_new_model(new_model)
+        self.logger.log("Created new empty FSM", self.__class__.__name__)
 
 
 
