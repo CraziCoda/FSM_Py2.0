@@ -310,8 +310,8 @@ class OpenMachine(BaseCommand):
         super().__init__()
 
         self.canvas: "CanvasView" = canvas
-
         self.existing_machine = existing_machine
+        self.file_path = None
 
         self.logging_level = "INFO"
         self.log = f"Opening cancelled"
@@ -321,17 +321,17 @@ class OpenMachine(BaseCommand):
             self.log = f"Opening cancelled"
             QMessageBox.warning(None, "Opening cancelled",
                                 "This machine has not been saved yet.")
-
             return
 
         file_dialog = QFileDialog.getOpenFileName(
             None, "Open Machine", "", "JSON Files (*.json)")
         if file_dialog[0]:
-            with open(file_dialog[0], "r") as f:
+            self.file_path = file_dialog[0]
+            with open(self.file_path, "r") as f:
                 json_data = json.load(f)
 
             new_model = FSMModel()
-            new_model.set_path(file_dialog[0])
+            new_model.set_path(self.file_path)
             new_model.from_json(json_data)
             self.log = f"Opened machine: {new_model.name}"
 

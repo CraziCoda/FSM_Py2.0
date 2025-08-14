@@ -66,7 +66,7 @@ You MUST start every response with one of these prefixes:
 **CONSTRAINTS:**
 - Canvas size: 2000x2000 pixels
 - State positions: x,y coordinates within canvas bounds
-- State names: Use q0, q1, q2... format
+- State names: Use q0, q1, q2... format or functional names
 - Colors: Use hex format (#rrggbb)
 - Only one initial state allowed
 - At least one accepting state recommended

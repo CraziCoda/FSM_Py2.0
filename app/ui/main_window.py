@@ -11,7 +11,9 @@ from app.core.logger import ActivityLogger
 from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
 from app.ui.dialogs.assistant_config import AssistantConfigDialog
+from app.core.recent_files import RecentFilesManager
 from utils.constants import ICONS_PATH
+import os
 
 
 class MainWindow(QMainWindow):
@@ -21,6 +23,7 @@ class MainWindow(QMainWindow):
         self.logger = ActivityLogger()
         self.validator = FSMValidator()
         self.selected_tool: str = ""
+        self.recent_files = RecentFilesManager()
 
         self._create_central_widget()
         self._create_docks()
@@ -41,7 +44,11 @@ class MainWindow(QMainWindow):
         new_action.setShortcut("Ctrl+N")
 
         open_action = QAction("Open", self)
-        open_action.triggered.connect(lambda: self.canvas.command_manager.execute(OpenMachine(self.canvas.fsm_model, self.canvas)))
+        open_action.triggered.connect(self.open_file)
+        
+        # Recent files submenu
+        self.recent_menu = file_menu.addMenu("Recent Files")
+        self.update_recent_files_menu()
 
         save_action = QAction("Save", self)
         save_action.triggered.connect(lambda: self.canvas.command_manager.execute(SaveFSMModelCommand(self.canvas.fsm_model)))
@@ -52,6 +59,7 @@ class MainWindow(QMainWindow):
 
         file_menu.addAction(new_action)
         file_menu.addAction(open_action)
+        file_menu.addSeparator()
         file_menu.addAction(save_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
@@ -105,7 +113,7 @@ class MainWindow(QMainWindow):
         save_action.setShortcut("Ctrl+S")
 
         open_file_action = QAction(QIcon(f"{ICONS_PATH}/open-folder.png"), "Open", self)
-        open_file_action.triggered.connect(lambda: self.canvas.command_manager.execute(OpenMachine(self.canvas.fsm_model, self.canvas)))
+        open_file_action.triggered.connect(self.open_file)
         open_file_action.setShortcut("Ctrl+O")
 
         control_group = QActionGroup(self)
@@ -213,6 +221,75 @@ class MainWindow(QMainWindow):
 
     def getSelectedTool(self):
         return self.selected_tool
+    
+    def open_file(self):
+        """Open file and add to recent files"""
+        command = OpenMachine(self.canvas.fsm_model, self.canvas)
+        self.canvas.command_manager.execute(command)
+        
+        # Add to recent files if file was opened successfully
+        if hasattr(command, 'file_path') and command.file_path:
+            self.recent_files.add_file(command.file_path)
+            self.update_recent_files_menu()
+    
+    def open_recent_file(self, file_path):
+        """Open a recent file"""
+        if os.path.exists(file_path):
+            # Create a modified OpenMachine command for recent files
+            import json
+            from app.ui.items.state import FSMModel
+            
+            try:
+                with open(file_path, "r") as f:
+                    json_data = json.load(f)
+                
+                new_model = FSMModel()
+                new_model.set_path(file_path)
+                new_model.from_json(json_data)
+                
+                self.canvas.set_new_model(new_model)
+                self.recent_files.add_file(file_path)
+                self.update_recent_files_menu()
+                
+                self.logger.log(f"Opened recent file: {os.path.basename(file_path)}", self.__class__.__name__)
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"Could not open file: {str(e)}")
+        else:
+            QMessageBox.warning(self, "File Not Found", f"File does not exist: {file_path}")
+            # Remove from recent files
+            recent_files = self.recent_files.get_recent_files()
+            if file_path in recent_files:
+                recent_files.remove(file_path)
+                self.recent_files.settings.setValue("recent_files", recent_files)
+                self.update_recent_files_menu()
+    
+    def update_recent_files_menu(self):
+        """Update the recent files menu"""
+        self.recent_menu.clear()
+        
+        recent_files = self.recent_files.get_recent_files()
+        
+        if not recent_files:
+            no_files_action = QAction("No recent files", self)
+            no_files_action.setEnabled(False)
+            self.recent_menu.addAction(no_files_action)
+        else:
+            for file_path in recent_files:
+                file_name = os.path.basename(file_path)
+                action = QAction(file_name, self)
+                action.setToolTip(file_path)
+                action.triggered.connect(lambda checked, path=file_path: self.open_recent_file(path))
+                self.recent_menu.addAction(action)
+            
+            self.recent_menu.addSeparator()
+            clear_action = QAction("Clear Recent Files", self)
+            clear_action.triggered.connect(self.clear_recent_files)
+            self.recent_menu.addAction(clear_action)
+    
+    def clear_recent_files(self):
+        """Clear all recent files"""
+        self.recent_files.clear_recent_files()
+        self.update_recent_files_menu()
     
     def show_assistant_config(self):
         """Show assistant configuration dialog"""
