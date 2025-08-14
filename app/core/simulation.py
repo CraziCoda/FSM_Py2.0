@@ -166,6 +166,8 @@ class Simulation:
         
     def find_transition(self):
         for transition in self.current_state.transitions:
+            if transition.source != self.current_state:
+                continue
             if self.inputs[self.ticks] in transition.input_symbols:
                 return transition
             
