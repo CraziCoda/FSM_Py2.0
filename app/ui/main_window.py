@@ -12,6 +12,7 @@ from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
 from app.ui.dialogs.assistant_config import AssistantConfigDialog
 from app.core.recent_files import RecentFilesManager
+from app.ui.dialogs.code_generator import CodeGeneratorDialog
 from utils.constants import ICONS_PATH
 import os
 
@@ -92,6 +93,21 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.console_dock.toggleViewAction())
         
         tools_menu = menu.addMenu("Tools")
+        
+        # Generator submenu
+        generator_menu = tools_menu.addMenu("Generator")
+        
+        python_action = QAction("Python", self)
+        python_action.triggered.connect(lambda: self.show_code_generator("python"))
+        generator_menu.addAction(python_action)
+        
+        cpp_action = QAction("C++", self)
+        cpp_action.triggered.connect(lambda: self.show_code_generator("cpp"))
+        generator_menu.addAction(cpp_action)
+        
+        java_action = QAction("Java", self)
+        java_action.triggered.connect(lambda: self.show_code_generator("java"))
+        generator_menu.addAction(java_action)
         
         assistant_menu = menu.addMenu("Assistant")
         config_action = QAction("Configuration", self)
@@ -312,6 +328,16 @@ class MainWindow(QMainWindow):
         new_model = FSMModel()
         self.canvas.set_new_model(new_model)
         self.logger.log("Created new empty FSM", self.__class__.__name__)
+    def show_code_generator(self, language=None):
+        """Show code generator dialog"""
+        dialog = CodeGeneratorDialog(self.canvas.fsm_model, self)
+        if language:
+            lang_map = {"python": "Python", "cpp": "C++", "java": "Java"}
+            if language in lang_map:
+                index = dialog.lang_combo.findText(lang_map[language])
+                if index >= 0:
+                    dialog.lang_combo.setCurrentIndex(index)
+        dialog.exec_()
 
 
 
