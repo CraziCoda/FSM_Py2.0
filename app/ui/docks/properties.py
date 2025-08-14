@@ -364,7 +364,6 @@ class ItemProperties(QDockWidget):
         """)
     
     def show_properties(self, item: "StateItem | TransitionItem | CommentItem | None"):
-        print(item)
         if isinstance(item, StateItem):
             self.state_properties(item)
             self.apply_button.show()

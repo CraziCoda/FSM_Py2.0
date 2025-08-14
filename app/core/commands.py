@@ -285,8 +285,15 @@ class SaveFSMModelCommand(BaseCommand):
             json_data = self.model.to_json()
 
             path = json_data["path"]
-            with open(path, "w") as f:
-                json.dump(json_data, f, indent=4)
+            try:
+                with open(path, "w") as f:
+                    json.dump(json_data, f, indent=4)
+            except IsADirectoryError:
+                with open(f"{DEFAULT_MODEL_PATH}/{json_data['name']}.json", "w") as f:
+                    json.dump(json_data, f, indent=4)
+            except BaseException as e:
+                self.log = f"Unable to save model"
+                QMessageBox.warning(None, "Invalid Input", f"Unable to save model: {e}")
 
             self.log = f"Saved model: {json_data['name']}"
             self.model.set_is_saved(True)

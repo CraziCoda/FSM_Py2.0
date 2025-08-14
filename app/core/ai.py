@@ -1,4 +1,5 @@
 from google import genai
+from google.genai import types
 from PyQt5.QtCore import QSettings
 
 role = """
@@ -20,7 +21,7 @@ You MUST start every response with one of these prefixes:
 {
   "id": "unique_id",
   "name": "FSM Name",
-  "path": "./models",
+  "path": "",
   "input_alphabet": ["a", "b", "c"],
   "output_alphabet": ["0", "1"],
   "states": [
@@ -93,5 +94,23 @@ Always ensure FSMs are correct, complete, and follow best practices.
 class Assistant:
     def __init__(self):
         self.settings = QSettings("FSM_Py2.0", "Assistant")
-        self.model = None
-        pass
+        self.model = "gemini-2.5-flash"
+        try:
+            self.client = genai.Client(api_key=self.settings.value("api_key", ""))
+        except:
+            self.client = None
+
+    def get_response(self, prompt, context: str = ""):
+        if not self.client:
+            return "Please set your API key in the settings."
+
+        response = self.client.models.generate_content(
+            model=self.model,
+            config=types.GenerateContentConfig(
+                system_instruction=role,
+                thinking_config=types.ThinkingConfig(thinking_budget=0)
+            ),
+            contents=prompt + f"\n\nContext:\n{context}"
+        )
+
+        return response.text

@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import (
     QLineEdit, QPushButton, QLabel, QFrame
 )
 from PyQt5.QtCore import Qt, QTimer, QSettings
+from app.core.ai import Assistant
+import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -79,8 +81,9 @@ class ChatDock(QDockWidget):
         self.loading_timer.timeout.connect(self.update_loading)
         self.loading_dots = 0
         
-        # Settings
+        # Settings and AI Assistant
         self.settings = QSettings("FSM_Py2.0", "Assistant")
+        self.assistant = Assistant()
         
         # Check API key and initialize
         self.check_api_key()
@@ -98,15 +101,36 @@ class ChatDock(QDockWidget):
         # Show loading and disable input
         self.show_loading()
         
-        # TODO: Integrate with actual LLM API
-        # Simulate response delay
-        QTimer.singleShot(2000, self.simulate_response)
+        # Get AI response
+        QTimer.singleShot(100, self.simulate_response)
     
     def simulate_response(self):
-        """Simulate LLM response (replace with actual API call)"""
-        self.hide_loading()
-        self.add_message("assistant", "I understand you want to work on FSM design. This feature will be connected to an LLM service to provide intelligent assistance with your finite state machine projects.")
-    
+        """Get actual AI response"""
+        user_text = self.input_field.toPlainText().strip()
+        
+        # Get current FSM context
+        context = ""
+        if hasattr(self.parent_window, 'canvas') and self.parent_window.canvas.fsm_model:
+            try:
+                context = json.dumps(self.parent_window.canvas.fsm_model.to_json(), indent=2)
+            except:
+                context = "Current FSM model available"
+        
+        # Get AI response
+        try:
+            response = self.assistant.get_response(user_text, context)
+            self.hide_loading()
+            
+            # Check if response contains FSM JSON
+            if response.startswith("new fsm") or response.startswith("mod fsm"):
+                self.process_fsm_response(response)
+            else:
+                self.add_message("assistant", response)
+
+        except Exception as e:
+            self.hide_loading()
+            self.add_message("assistant", f"Error: {str(e)}. Please check your API key configuration.")
+                    
     def show_loading(self):
         """Show loading indicator"""
         self.is_loading = True
@@ -239,11 +263,44 @@ class ChatDock(QDockWidget):
         self.input_field.setEnabled(True)
         self.input_field.setPlaceholderText("Ask about FSM design, modifications, or best practices...")
     
+    def process_fsm_response(self, response):
+        """Process FSM JSON response and update the model"""
+        try:
+            # Extract JSON from response
+            if response.startswith("new fsm"):
+                json_str = response[7:].strip()
+                action = "Created"
+            elif response.startswith("mod fsm"):
+                json_str = response[7:].strip()
+                action = "Modified"
+            else:
+                self.add_message("assistant", response)
+                return
+            
+            # Parse JSON
+            fsm_data = json.loads(json_str)
+            
+            # Update the FSM model
+            if hasattr(self.parent_window, 'canvas'):
+                from app.ui.items.state import FSMModel
+                new_model = FSMModel()
+                new_model.from_json(fsm_data)
+                self.parent_window.canvas.set_new_model(new_model)
+                self.add_message("assistant", f"{action} FSM: {fsm_data.get('name', 'Unnamed')}")
+            else:
+                self.add_message("assistant", "FSM generated but canvas not available")
+                
+        except json.JSONDecodeError:
+            self.add_message("assistant", "Generated FSM but JSON format was invalid")
+        except Exception as e:
+            self.add_message("assistant", f"Error processing FSM: {str(e)}")
+    
     def open_config_dialog(self):
         """Open assistant configuration dialog"""
         from app.ui.dialogs.assistant_config import AssistantConfigDialog
         dialog = AssistantConfigDialog(self)
         if dialog.exec_():
+            self.assistant = Assistant()  # Reinitialize with new settings
             self.check_api_key()  # Refresh after config
 
 
