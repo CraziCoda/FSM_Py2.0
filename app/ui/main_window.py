@@ -23,9 +23,9 @@ class MainWindow(QMainWindow):
         self.selected_tool: str = ""
 
         self._create_central_widget()
+        self._create_docks()
         self._create_menu_bar()
         self._create_toolbar()
-        self._create_docks()
         self.showMaximized()
 
         self.logger.log("Application started", self.__class__.__name__)
@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
     
     def _create_menu_bar(self):
         menu = self.menuBar()
+        menu.setStyleSheet(MENU_STYLE)
 
         file_menu = menu.addMenu("File")
         new_action = QAction("New", self)
@@ -54,8 +55,32 @@ class MainWindow(QMainWindow):
         file_menu.addAction(exit_action)
 
         edit_menu = menu.addMenu("Edit")
+        
+        undo_menu_action = QAction(QIcon(f"{ICONS_PATH}/undo.png"), "Undo", self)
+        undo_menu_action.setShortcut("Ctrl+Z")
+        undo_menu_action.triggered.connect(self.canvas.command_manager.undo)
+        edit_menu.addAction(undo_menu_action)
+        
+        redo_menu_action = QAction(QIcon(f"{ICONS_PATH}/redo.png"), "Redo", self)
+        redo_menu_action.setShortcut("Ctrl+Y")
+        redo_menu_action.triggered.connect(self.canvas.command_manager.redo)
+        edit_menu.addAction(redo_menu_action)
+        
+        edit_menu.addSeparator()
+        
+        delete_selected_action = QAction(QIcon(f"{ICONS_PATH}/delete.png"), "Delete Selected", self)
+        delete_selected_action.setShortcut("Delete")
+        edit_menu.addAction(delete_selected_action)
+        
         simulation_menu = menu.addMenu("Simulation")
+        
         view_menu = menu.addMenu("View")
+        view_menu.addAction(self.elements_dock.toggleViewAction())
+        view_menu.addAction(self.properties_dock.toggleViewAction())
+        view_menu.addAction(self.simulation_dock.toggleViewAction())
+        view_menu.addAction(self.chat_dock.toggleViewAction())
+        view_menu.addAction(self.console_dock.toggleViewAction())
+        
         tools_menu = menu.addMenu("Tools")
         
         assistant_menu = menu.addMenu("Assistant")
@@ -64,6 +89,8 @@ class MainWindow(QMainWindow):
         assistant_menu.addAction(config_action)
         
         settings_menu = menu.addMenu("Settings")
+    
+
 
     def _create_toolbar(self):
         toolbar = QToolBar("Main Toolbar", self)
@@ -150,8 +177,8 @@ class MainWindow(QMainWindow):
 
 
     def _create_docks(self):
-        elements_dock = Elements(self)
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, elements_dock)
+        self.elements_dock = Elements(self)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.elements_dock)
 
         self.properties_dock = ItemProperties(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.properties_dock)
@@ -166,12 +193,14 @@ class MainWindow(QMainWindow):
         self.tabifyDockWidget(self.simulation_dock, self.chat_dock)
         self.properties_dock.raise_()
 
-        console_dock = ConsoleDock(self)    
-        self.logger.setConsoleDock(console_dock)
-        self.validator.set_console_dock(console_dock)  
+        self.console_dock = ConsoleDock(self)    
+        self.logger.setConsoleDock(self.console_dock)
+        self.validator.set_console_dock(self.console_dock)  
         self.validator.validate()
 
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.console_dock)
+        
+
 
     def _create_central_widget(self):
         self.canvas = CanvasView(self)
@@ -201,5 +230,75 @@ QToolBar {
 QToolBar::separator {
     width: 1px;
     background-color: #ccc;
+}
+"""
+
+MENU_STYLE = """
+QMenuBar {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 2px;
+}
+
+QMenuBar::item {
+    background: transparent;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 1px;
+}
+
+QMenuBar::item:selected {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+QMenuBar::item:pressed {
+    background-color: #dee2e6;
+}
+
+QMenu {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QMenu::item {
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin: 1px;
+}
+
+QMenu::item:selected {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+QMenu::item:disabled {
+    color: #adb5bd;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #dee2e6;
+    margin: 4px 8px;
+}
+
+QMenu::indicator {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+}
+
+QMenu::indicator:checked {
+    background-color: #1976d2;
+    border: 2px solid #1976d2;
+    border-radius: 3px;
+}
+
+QMenu::indicator:unchecked {
+    background-color: transparent;
+    border: 2px solid #adb5bd;
+    border-radius: 3px;
 }
 """
