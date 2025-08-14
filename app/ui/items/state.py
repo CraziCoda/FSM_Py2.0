@@ -386,15 +386,3 @@ class FSMModel:
             transition.actions = transition_json.get("actions", [])
             self.add_transition(transition)
             
-        # Load comments
-        from app.ui.items.comment import CommentItem
-        for comment_json in model_json.get("comments", []):
-            comment = CommentItem(comment_json.get("text", "Comment"))
-            comment.id = comment_json.get("id", comment.id)
-            props = comment_json.get("properties", {})
-            comment.setPos(props.get("x", 0), props.get("y", 0))
-            comment.bg_color = QColor(props.get("bg_color", "#ffffcc"))
-            comment.text_color = QColor(props.get("text_color", "#000000"))
-            comment.border_color = QColor(props.get("border_color", "#cccccc"))
-            self.comments.append(comment)
-            

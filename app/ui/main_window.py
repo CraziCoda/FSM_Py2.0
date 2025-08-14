@@ -4,11 +4,13 @@ from PyQt5.QtGui import QIcon
 from app.ui.docks.elements import Elements
 from app.ui.docks.properties import ItemProperties
 from app.ui.docks.simulation import SimulationDock
+from app.ui.docks.chat import ChatDock
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
 from app.core.logger import ActivityLogger
 from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
+from app.ui.dialogs.assistant_config import AssistantConfigDialog
 from utils.constants import ICONS_PATH
 
 
@@ -55,6 +57,12 @@ class MainWindow(QMainWindow):
         simulation_menu = menu.addMenu("Simulation")
         view_menu = menu.addMenu("View")
         tools_menu = menu.addMenu("Tools")
+        
+        assistant_menu = menu.addMenu("Assistant")
+        config_action = QAction("Configuration", self)
+        config_action.triggered.connect(self.show_assistant_config)
+        assistant_menu.addAction(config_action)
+        
         settings_menu = menu.addMenu("Settings")
 
     def _create_toolbar(self):
@@ -151,7 +159,11 @@ class MainWindow(QMainWindow):
         self.simulation_dock = SimulationDock(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.simulation_dock)
 
+        self.chat_dock = ChatDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.chat_dock)
+
         self.tabifyDockWidget(self.properties_dock, self.simulation_dock)
+        self.tabifyDockWidget(self.simulation_dock, self.chat_dock)
         self.properties_dock.raise_()
 
         console_dock = ConsoleDock(self)    
@@ -170,6 +182,11 @@ class MainWindow(QMainWindow):
 
     def getSelectedTool(self):
         return self.selected_tool
+    
+    def show_assistant_config(self):
+        """Show assistant configuration dialog"""
+        dialog = AssistantConfigDialog(self)
+        dialog.exec_()
 
 
 
