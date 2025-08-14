@@ -110,7 +110,7 @@ class Assistant:
                 system_instruction=role,
                 thinking_config=types.ThinkingConfig(thinking_budget=0)
             ),
-            contents=prompt + f"\n\nContext:\n{context}"
+            contents=prompt + f"\n\Here is the context:\n{context}"
         )
 
         return response.text

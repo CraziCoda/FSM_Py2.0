@@ -96,19 +96,13 @@ class ChatDock(QDockWidget):
         
         # Add user message
         self.add_message("user", user_text)
-        self.input_field.clear()
-        
-        # Show loading and disable input
         self.show_loading()
-        
-        # Get AI response
-        QTimer.singleShot(100, self.simulate_response)
+
+        QTimer.singleShot(100, self.get_response)
     
-    def simulate_response(self):
-        """Get actual AI response"""
+    def get_response(self):
         user_text = self.input_field.toPlainText().strip()
         
-        # Get current FSM context
         context = ""
         if hasattr(self.parent_window, 'canvas') and self.parent_window.canvas.fsm_model:
             try:
@@ -116,10 +110,10 @@ class ChatDock(QDockWidget):
             except:
                 context = "Current FSM model available"
         
-        # Get AI response
         try:
             response = self.assistant.get_response(user_text, context)
             self.hide_loading()
+            self.input_field.clear()
             
             # Check if response contains FSM JSON
             if response.startswith("new fsm") or response.startswith("mod fsm"):
@@ -139,7 +133,6 @@ class ChatDock(QDockWidget):
         self.send_button.setEnabled(False)
         self.input_field.setEnabled(False)
         self.add_loading_message()
-        self.loading_timer.start(500)
     
     def hide_loading(self):
         """Hide loading indicator"""
