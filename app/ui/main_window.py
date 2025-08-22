@@ -11,10 +11,13 @@ from app.core.logger import ActivityLogger
 from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
 from app.ui.dialogs.assistant_config import AssistantConfigDialog
+from app.ui.dialogs.preset_manager import PresetManagerDialog
+from app.ui.dialogs.batch_test import BatchTestDialog
 from app.core.recent_files import RecentFilesManager
 from app.ui.dialogs.code_generator import CodeGeneratorDialog
 from utils.constants import ICONS_PATH
 import os
+import json
 
 
 class MainWindow(QMainWindow):
@@ -85,6 +88,23 @@ class MainWindow(QMainWindow):
         
         simulation_menu = menu.addMenu("Simulation")
         
+        # Quick simulation presets
+        presets_action = QAction("Simulation Presets", self)
+        presets_action.triggered.connect(self.show_simulation_presets)
+        simulation_menu.addAction(presets_action)
+        
+        # Batch testing
+        batch_action = QAction("Batch Testing", self)
+        batch_action.triggered.connect(self.show_batch_testing)
+        simulation_menu.addAction(batch_action)
+        
+        simulation_menu.addSeparator()
+        
+        # Export simulation results
+        export_action = QAction("Export Last Results", self)
+        export_action.triggered.connect(self.export_simulation_results)
+        simulation_menu.addAction(export_action)
+        
         view_menu = menu.addMenu("View")
         view_menu.addAction(self.elements_dock.toggleViewAction())
         view_menu.addAction(self.properties_dock.toggleViewAction())
@@ -130,6 +150,10 @@ class MainWindow(QMainWindow):
 
         open_file_action = QAction(QIcon(f"{ICONS_PATH}/open-folder.png"), "Open", self)
         open_file_action.triggered.connect(self.open_file)
+        
+        # Quick simulation button
+        quick_sim_action = QAction(QIcon(f"{ICONS_PATH}/play.png"), "Quick Simulation", self)
+        quick_sim_action.triggered.connect(self.show_simulation_presets)
         open_file_action.setShortcut("Ctrl+O")
 
         control_group = QActionGroup(self)
@@ -196,6 +220,9 @@ class MainWindow(QMainWindow):
 
         toolbar.addAction(undo_action)
         toolbar.addAction(redo_action)
+        
+        toolbar.addSeparator()
+        toolbar.addAction(quick_sim_action)
 
         toolbar.setIconSize(QSize(18, 18))
         toolbar.setStyleSheet(TOOLBAR_STYLE)
@@ -338,6 +365,49 @@ class MainWindow(QMainWindow):
                 if index >= 0:
                     dialog.lang_combo.setCurrentIndex(index)
         dialog.exec_()
+    
+    def show_simulation_presets(self):
+        """Show simulation presets dialog"""
+        dialog = PresetManagerDialog(self)
+        if dialog.exec_():
+            # Apply preset to simulation dock if dialog was accepted
+            preset = dialog.get_current_preset()
+            if preset['input']:
+                self.simulation_dock.apply_preset(preset)
+    
+    def show_batch_testing(self):
+        """Show batch testing dialog"""
+        dialog = BatchTestDialog(self)
+        dialog.exec_()
+    
+    def export_simulation_results(self):
+        """Export last simulation results"""
+        if hasattr(self.simulation_dock, 'last_results') and self.simulation_dock.last_results:
+            from PyQt5.QtWidgets import QFileDialog
+            
+            file_path, _ = QFileDialog.getSaveFileName(
+                self, "Export Simulation Results", "simulation_results.json", 
+                "JSON Files (*.json);;CSV Files (*.csv)")
+            
+            if file_path:
+                try:
+                    if file_path.endswith('.json'):
+                        with open(file_path, 'w') as f:
+                            json.dump(self.simulation_dock.last_results, f, indent=2)
+                    else:  # CSV
+                        import csv
+                        with open(file_path, 'w', newline='') as f:
+                            writer = csv.writer(f)
+                            writer.writerow(['Step', 'Input', 'State', 'Output'])
+                            for i, result in enumerate(self.simulation_dock.last_results):
+                                writer.writerow([i, result.get('input', ''), 
+                                               result.get('state', ''), result.get('output', '')])
+                    
+                    QMessageBox.information(self, "Export Complete", f"Results exported to {file_path}")
+                except Exception as e:
+                    QMessageBox.warning(self, "Export Error", f"Failed to export: {str(e)}")
+        else:
+            QMessageBox.information(self, "No Results", "No simulation results to export. Run a simulation first.")
 
 
 
