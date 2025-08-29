@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import (
     QPushButton, QTableWidget, QTableWidgetItem, QProgressBar,
     QComboBox, QSpinBox, QCheckBox
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import json
 
 class BatchTestDialog(QDialog):
