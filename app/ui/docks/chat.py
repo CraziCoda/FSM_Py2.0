@@ -294,6 +294,7 @@ class ChatDock(QDockWidget):
                 from app.ui.items.state import FSMModel
                 new_model = FSMModel()
                 new_model.from_json(fsm_data)
+                self.parent_window.model_dock.update_model_info(new_model)
                 self.parent_window.canvas.set_new_model(new_model)
                 self.add_message("assistant", f"{action} FSM: {fsm_data.get('name', 'Unnamed')}")
             else:
