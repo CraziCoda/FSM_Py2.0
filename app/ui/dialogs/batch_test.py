@@ -88,7 +88,13 @@ class BatchTestDialog(QDialog):
     def run_tests(self):
         inputs = [line.strip() for line in self.input_text.toPlainText().split('\n') if line.strip()]
         if not inputs:
+            self._log("No test inputs provided", "WARNING")
             return
+        
+        # Log test configuration
+        delimiter = self.delimiter_input.text() or "per character"
+        self._log(f"Starting batch test with {len(inputs)} inputs", "INFO")
+        self._log(f"Mode: {self.mode_combo.currentText()}, Delimiter: {delimiter}", "INFO")
         
         self.progress.setVisible(True)
         self.progress.setMaximum(len(inputs))
@@ -98,10 +104,22 @@ class BatchTestDialog(QDialog):
         self.results_table.setRowCount(len(inputs))
         self.results = []
         
-        # Simulate running tests (replace with actual simulation logic)
+        # Track results statistics
+        accepted = rejected = errors = 0
+        
         for i, test_input in enumerate(inputs):
+            self._log(f"Testing input {i+1}/{len(inputs)}: '{test_input}'", "INFO")
             result = self.simulate_input(test_input)
             self.results.append(result)
+            
+            # Update statistics
+            if result['status'] == 'Accepted':
+                accepted += 1
+            elif result['status'] == 'Rejected':
+                rejected += 1
+            else:
+                errors += 1
+                self._log(f"Error with input '{test_input}': {result['status']}", "WARNING")
             
             # Update table
             self.results_table.setItem(i, 0, QTableWidgetItem(test_input))
@@ -110,6 +128,9 @@ class BatchTestDialog(QDialog):
             self.results_table.setItem(i, 3, QTableWidgetItem(result['status']))
             
             self.progress.setValue(i + 1)
+        
+        # Log final results
+        self._log(f"Batch test completed: {accepted} accepted, {rejected} rejected, {errors} errors", "INFO")
         
         self.run_button.setEnabled(True)
         self.export_button.setEnabled(True)
@@ -121,6 +142,7 @@ class BatchTestDialog(QDialog):
         validation_issues = self.parent_window.validator.issues
         
         if len(validation_issues) > 0:
+            self._log(f"FSM validation failed: {len(validation_issues)} issues", "ERROR")
             return {"final_state": "N/A", "output": "N/A", "status": "Validation Error"}
 
         _model = self.parent_window.canvas.fsm_model
@@ -132,24 +154,31 @@ class BatchTestDialog(QDialog):
         else:
             inputs = test_input.split(delimiter)
         
+        self._log(f"Parsed input '{test_input}' into symbols: {inputs}", "INFO")
+        
         # Validate input alphabet
         if len(_model.input_alphabet) > 0:
             for inp in inputs:
                 if inp not in _model.input_alphabet:
+                    self._log(f"Symbol '{inp}' not in input alphabet {list(_model.input_alphabet)}", "WARNING")
                     return {"final_state": "N/A", "output": "N/A", "status": "Invalid Input"}
         
         initial_states = [s for s in _model.states if s.is_initial]
         if not initial_states:
+            self._log("No initial state defined in FSM", "ERROR")
             return {"final_state": "N/A", "output": "N/A", "status": "No initial state"}
         
         if len(initial_states) > 1:
+            self._log(f"Multiple initial states found: {[s.name for s in initial_states]}", "ERROR")
             return {"final_state": "N/A", "output": "N/A", "status": "Multiple initial states"}
         
         current_state = initial_states[0]
         outputs = []
         mode = self.mode_combo.currentText().lower()
         
-        for inp in inputs:
+        self._log(f"Starting simulation from state '{current_state.name}' in {mode} mode", "INFO")
+        
+        for i, inp in enumerate(inputs):
             next_state = None
             transition_output = ""
             
@@ -158,20 +187,29 @@ class BatchTestDialog(QDialog):
                     next_state = transition.destination
                     if mode == "mealy":
                         transition_output = transition.output_value
+                    self._log(f"Step {i+1}: '{inp}' -> {current_state.name} to {next_state.name}", "INFO")
                     break
             
             if next_state is None:
+                self._log(f"No transition found from '{current_state.name}' on input '{inp}'", "WARNING")
                 return {"final_state": current_state.name, "output": ",".join(outputs), "status": "No transition"}
             
             current_state = next_state
             
             if mode == "moore":
-                outputs.append(current_state.output_value)
+                output = current_state.output_value
+                outputs.append(output)
+                self._log(f"Moore output: '{output}'", "INFO")
             else:
                 outputs.append(transition_output)
+                self._log(f"Mealy output: '{transition_output}'", "INFO")
         
         status = "Accepted" if current_state.is_accepting else "Rejected"
-        return {"final_state": current_state.name, "output": ",".join(outputs), "status": status}
+        final_output = ",".join(outputs)
+        self._log(f"Simulation ended in state '{current_state.name}' - {status}", "INFO")
+        self._log(f"Final output: '{final_output}'", "INFO")
+        
+        return {"final_state": current_state.name, "output": final_output, "status": status}
         
 
 
@@ -180,11 +218,25 @@ class BatchTestDialog(QDialog):
         from PyQt5.QtWidgets import QFileDialog
         
         if not self.results:
+            self._log("No results to export", "WARNING")
             return
         
         file_path, _ = QFileDialog.getSaveFileName(
             self, "Export Results", "batch_results.json", "JSON Files (*.json)")
         
         if file_path:
-            with open(file_path, 'w') as f:
-                json.dump(self.results, f, indent=2)
+            try:
+                with open(file_path, 'w') as f:
+                    json.dump(self.results, f, indent=2)
+                self._log(f"Results exported to: {file_path}", "INFO")
+                QMessageBox.information(self, "Export Complete", f"Results exported to:\n{file_path}")
+            except Exception as e:
+                self._log(f"Export failed: {str(e)}", "ERROR")
+                QMessageBox.warning(self, "Export Error", f"Failed to export results:\n{str(e)}")
+        else:
+            self._log("Export cancelled by user", "INFO")
+    
+    def _log(self, message: str, level: str = "INFO"):
+        """Log message to parent window's logger"""
+        if self.parent_window and hasattr(self.parent_window, 'logger'):
+            self.parent_window.logger.log(message, "BatchTestDialog", level)
