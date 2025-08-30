@@ -345,6 +345,7 @@ class MainWindow(QMainWindow):
         self.model_dock.update_model_info(new_model)
         self.canvas.set_new_model(new_model)
         self.logger.log("Created new empty FSM", self.__class__.__name__)
+        
     def show_code_generator(self, language=None):
         dialog = CodeGeneratorDialog(self.canvas.fsm_model, self)
         if language:
