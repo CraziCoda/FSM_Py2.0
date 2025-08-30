@@ -12,7 +12,6 @@ from app.core.logger import ActivityLogger
 from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
 from app.ui.dialogs.assistant_config import AssistantConfigDialog
-from app.ui.dialogs.preset_manager import PresetManagerDialog
 from app.ui.dialogs.batch_test import BatchTestDialog
 from app.core.recent_files import RecentFilesManager
 from app.ui.dialogs.code_generator import CodeGeneratorDialog
@@ -89,11 +88,6 @@ class MainWindow(QMainWindow):
         
         simulation_menu = menu.addMenu("Simulation")
         
-        # Quick simulation presets
-        presets_action = QAction("Simulation Presets", self)
-        presets_action.triggered.connect(self.show_simulation_presets)
-        simulation_menu.addAction(presets_action)
-        
         # Batch testing
         batch_action = QAction("Batch Testing", self)
         batch_action.triggered.connect(self.show_batch_testing)
@@ -152,9 +146,6 @@ class MainWindow(QMainWindow):
         open_file_action = QAction(QIcon(f"{ICONS_PATH}/open-folder.png"), "Open", self)
         open_file_action.triggered.connect(self.open_file)
         
-        # Quick simulation button
-        quick_sim_action = QAction(QIcon(f"{ICONS_PATH}/play.png"), "Quick Simulation", self)
-        quick_sim_action.triggered.connect(self.show_simulation_presets)
         open_file_action.setShortcut("Ctrl+O")
 
         control_group = QActionGroup(self)
@@ -222,8 +213,6 @@ class MainWindow(QMainWindow):
         toolbar.addAction(undo_action)
         toolbar.addAction(redo_action)
         
-        toolbar.addSeparator()
-        toolbar.addAction(quick_sim_action)
 
         toolbar.setIconSize(QSize(18, 18))
         toolbar.setStyleSheet(TOOLBAR_STYLE)
@@ -271,7 +260,6 @@ class MainWindow(QMainWindow):
         return self.selected_tool
     
     def open_file(self):
-        """Open file and add to recent files"""
         command = OpenMachine(self.canvas.fsm_model, self.canvas)
         self.canvas.command_manager.execute(command)
         
@@ -281,7 +269,6 @@ class MainWindow(QMainWindow):
             self.update_recent_files_menu()
     
     def open_recent_file(self, file_path):
-        """Open a recent file"""
         if os.path.exists(file_path):
             # Create a modified OpenMachine command for recent files
             import json
@@ -313,7 +300,6 @@ class MainWindow(QMainWindow):
                 self.update_recent_files_menu()
     
     def update_recent_files_menu(self):
-        """Update the recent files menu"""
         self.recent_menu.clear()
         
         recent_files = self.recent_files.get_recent_files()
@@ -336,12 +322,10 @@ class MainWindow(QMainWindow):
             self.recent_menu.addAction(clear_action)
     
     def clear_recent_files(self):
-        """Clear all recent files"""
         self.recent_files.clear_recent_files()
         self.update_recent_files_menu()
     
     def show_assistant_config(self):
-        """Show assistant configuration dialog"""
         dialog = AssistantConfigDialog(self)
         dialog.exec_()
     
@@ -362,7 +346,6 @@ class MainWindow(QMainWindow):
         self.canvas.set_new_model(new_model)
         self.logger.log("Created new empty FSM", self.__class__.__name__)
     def show_code_generator(self, language=None):
-        """Show code generator dialog"""
         dialog = CodeGeneratorDialog(self.canvas.fsm_model, self)
         if language:
             lang_map = {"python": "Python", "cpp": "C++", "java": "Java"}
@@ -372,22 +355,12 @@ class MainWindow(QMainWindow):
                     dialog.lang_combo.setCurrentIndex(index)
         dialog.exec_()
     
-    def show_simulation_presets(self):
-        """Show simulation presets dialog"""
-        dialog = PresetManagerDialog(self)
-        if dialog.exec_():
-            # Apply preset to simulation dock if dialog was accepted
-            preset = dialog.get_current_preset()
-            if preset['input']:
-                self.simulation_dock.apply_preset(preset)
     
     def show_batch_testing(self):
-        """Show batch testing dialog"""
         dialog = BatchTestDialog(self)
         dialog.exec_()
     
     def export_simulation_results(self):
-        """Export last simulation results"""
         if hasattr(self.simulation_dock, 'last_results') and self.simulation_dock.last_results:
             from PyQt5.QtWidgets import QFileDialog
             
