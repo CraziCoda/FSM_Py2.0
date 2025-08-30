@@ -7,6 +7,7 @@ from app.ui.docks.simulation import SimulationDock
 from app.ui.docks.chat import ChatDock
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
+from app.ui.docks.model import FSMModelDock
 from app.core.logger import ActivityLogger
 from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
@@ -242,9 +243,13 @@ class MainWindow(QMainWindow):
         self.chat_dock = ChatDock(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.chat_dock)
 
+        self.model_dock = FSMModelDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.model_dock)
+
+        self.tabifyDockWidget(self.model_dock, self.properties_dock)
         self.tabifyDockWidget(self.properties_dock, self.simulation_dock)
         self.tabifyDockWidget(self.simulation_dock, self.chat_dock)
-        self.properties_dock.raise_()
+        self.model_dock.raise_()
 
         self.console_dock = ConsoleDock(self)    
         self.logger.setConsoleDock(self.console_dock)
@@ -287,6 +292,7 @@ class MainWindow(QMainWindow):
                     json_data = json.load(f)
                 
                 new_model = FSMModel()
+                new_model.on_change(self.model_dock.update_model_info)
                 new_model.set_path(file_path)
                 new_model.from_json(json_data)
                 
@@ -340,7 +346,6 @@ class MainWindow(QMainWindow):
         dialog.exec_()
     
     def clear_fsm(self):
-        """Clear the current FSM and create a new empty one"""
         if not self.canvas.fsm_model.is_saved:
             reply = QMessageBox.question(
                 self, "Unsaved Changes", 
@@ -353,6 +358,7 @@ class MainWindow(QMainWindow):
         
         from app.ui.items.state import FSMModel
         new_model = FSMModel()
+        self.model_dock.update_model_info(new_model)
         self.canvas.set_new_model(new_model)
         self.logger.log("Created new empty FSM", self.__class__.__name__)
     def show_code_generator(self, language=None):
