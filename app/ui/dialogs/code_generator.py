@@ -1,10 +1,11 @@
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, 
-    QPushButton, QComboBox, QApplication, QFrame
+    QPushButton, QComboBox, QApplication, QFrame, QMessageBox
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QIcon
 from app.core.generator import CodeGenerator
+import subprocess
+import tempfile
 
 
 class CodeGeneratorDialog(QDialog):
@@ -53,11 +54,16 @@ class CodeGeneratorDialog(QDialog):
         copy_btn.setObjectName("copyButton")
         copy_btn.clicked.connect(self.copy_code)
         
+        vscode_btn = QPushButton("💻 Open in VS Code")
+        vscode_btn.setObjectName("vscodeButton")
+        vscode_btn.clicked.connect(self.open_in_vscode)
+        
         close_btn = QPushButton("✖ Close")
         close_btn.setObjectName("closeButton")
         close_btn.clicked.connect(self.close)
         
         button_layout.addWidget(copy_btn)
+        button_layout.addWidget(vscode_btn)
         button_layout.addStretch()
         button_layout.addWidget(close_btn)
         
@@ -81,6 +87,23 @@ class CodeGeneratorDialog(QDialog):
     def copy_code(self):
         clipboard = QApplication.clipboard()
         clipboard.setText(self.code_text.toPlainText())
+    
+    def open_in_vscode(self):
+        try:
+            # Get file extension based on language
+            lang = self.lang_combo.currentText().lower()
+            ext = {"python": ".py", "c++": ".cpp", "java": ".java"}.get(lang, ".txt")
+            
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(mode='w', suffix=ext, delete=False) as f:
+                f.write(self.code_text.toPlainText())
+                temp_path = f.name
+            
+            # Open in VS Code
+            subprocess.run(["code", temp_path], check=True)
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to open in VS Code: {str(e)}")
+            return
     
     def _get_stylesheet(self):
         return """
@@ -174,5 +197,25 @@ class CodeGeneratorDialog(QDialog):
             
             #closeButton:pressed {
                 background: #a93226;
+            }
+            
+            #vscodeButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #3498db, stop:1 #2980b9);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            
+            #vscodeButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #5dade2, stop:1 #3498db);
+            }
+            
+            #vscodeButton:pressed {
+                background: #21618c;
             }
         """
