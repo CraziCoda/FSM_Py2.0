@@ -13,6 +13,7 @@ class CodeGenerator:
         self.generators = {
             'python': PythonGenerator,
             'cpp': CppGenerator,
+            'c++': CppGenerator,
             'java': JavaGenerator
         }
     

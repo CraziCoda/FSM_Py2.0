@@ -1,50 +1,24 @@
 from .base import BaseCodeGenerator
+import re
 
 
 class JavaGenerator(BaseCodeGenerator):
     def generate(self) -> str:
         """Generate Java code for the FSM"""
-        code = []
-        code.append("import java.util.*;")
-        code.append("")
-        code.append("public class FSM {")
-        code.append("    private String currentState;")
-        code.append("    private Set<String> acceptingStates;")
-        code.append("    private Map<String, String> transitions;")
-        code.append("")
-        code.append("    public FSM() {")
-        code.append("        acceptingStates = new HashSet<>();")
-        code.append("        transitions = new HashMap<>();")
-        
-        # Set initial state
-        initial_state = self.get_initial_state()
-        if initial_state:
-            code.append(f"        currentState = \"{initial_state.name}\";")
-        
-        # Add accepting states
-        for state in self.get_accepting_states():
-            code.append(f"        acceptingStates.add(\"{state.name}\");")
-        
-        # Add transitions
-        for transition in self.fsm_model.transitions:
-            for symbol in transition.input_symbols:
-                key = f"{transition.source.name},{symbol}"
-                code.append(f"        transitions.put(\"{key}\", \"{transition.destination.name}\");")
-        
-        code.append("    }")
-        code.append("")
-        code.append("    public boolean transition(String inputSymbol) {")
-        code.append("        String key = currentState + \",\" + inputSymbol;")
-        code.append("        if (transitions.containsKey(key)) {")
-        code.append("            currentState = transitions.get(key);")
-        code.append("            return true;")
-        code.append("        }")
-        code.append("        return false;")
-        code.append("    }")
-        code.append("")
-        code.append("    public boolean isAccepting() {")
-        code.append("        return acceptingStates.contains(currentState);")
-        code.append("    }")
-        code.append("}")
-        
-        return "\n".join(code)
+        return self.render_template('java.j2')
+    
+    def sanitize_class_name(self, name: str) -> str:
+        """Sanitize class name for Java (PascalCase, no reserved words)"""
+        if not name:
+            return "FSM"
+        # Remove invalid characters, convert to PascalCase
+        sanitized = re.sub(r'[^a-zA-Z0-9_]', '', name)
+        if not sanitized or sanitized[0].isdigit():
+            sanitized = "FSM" + sanitized
+        # Convert to PascalCase
+        result = ''.join(word.capitalize() for word in re.split(r'[_\s]+', sanitized) if word)
+        # Check for Java reserved words
+        java_keywords = {'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 'class', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 'extends', 'final', 'finally', 'float', 'for', 'goto', 'if', 'implements', 'import', 'instanceof', 'int', 'interface', 'long', 'native', 'new', 'package', 'private', 'protected', 'public', 'return', 'short', 'static', 'strictfp', 'super', 'switch', 'synchronized', 'this', 'throw', 'throws', 'transient', 'try', 'void', 'volatile', 'while'}
+        if result.lower() in java_keywords:
+            result = "FSM" + result
+        return result
