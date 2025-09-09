@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsPolygonItem, QGraphicsObject)
+from PyQt5.QtWidgets import (
+    QGraphicsItem, QGraphicsPolygonItem, QGraphicsObject)
 from PyQt5.QtCore import QRectF, Qt, QPointF, QLineF, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QPen, QBrush, QPolygonF, QColor
 from app.ui.dialogs.state_editor import StateEditorDialog
@@ -200,27 +201,47 @@ class FSMModel:
         self.states: list[StateItem] = []
         self.transitions: list[TransitionItem] = []
         self.comments: list = []
-        
+
         # Simulation properties
         self.input_alphabet = set()      # Valid input symbols
         self.output_alphabet = set()     # Valid output symbols
 
+        # Handles
+        self._on_change_handles = []
+
+    def _handle_change(self):
+        for handle in self._on_change_handles:
+            handle(self)
+
+    def on_change(self, handle):
+        self._on_change_handles.append(handle)
+
+    def on_change_remove(self, handle):
+        try:
+            self._on_change_handles.remove(handle)
+        except ValueError:
+            pass
+
     def add_state(self, state: StateItem):
         self.states.append(state)
         self.is_saved = False
+        self._handle_change()
 
     def add_transition(self, transition: "TransitionItem"):
         self.transitions.append(transition)
         self.is_saved = False
-        
+        self._handle_change()
+
     def add_comment(self, comment):
         self.comments.append(comment)
         self.is_saved = False
-        
+        self._handle_change()
+
     def remove_comment(self, comment):
         try:
             self.comments.remove(comment)
             self.is_saved = False
+            self._handle_change()
         except ValueError:
             pass
 
@@ -228,6 +249,7 @@ class FSMModel:
         try:
             self.states.remove(state)
             self.is_saved = False
+            self._handle_change()
         except ValueError:
             pass
 
@@ -235,17 +257,21 @@ class FSMModel:
         try:
             self.transitions.remove(transition)
             self.is_saved = False
+            self._handle_change()
         except ValueError:
             pass
 
     def set_name(self, name: str):
         self.name = name
+        self._handle_change()
 
     def set_path(self, path: str):
         self.path = path
+        self._handle_change()
 
     def set_is_saved(self, is_saved: bool):
         self.is_saved = is_saved
+        self._handle_change()
 
     def get_new_state_name(self):
         i = 0
@@ -309,6 +335,7 @@ class FSMModel:
 
             transitions_json.append(transition_json)
 
+
         # Add comments to JSON
         comments_json = []
         for comment in self.comments:
@@ -343,6 +370,8 @@ class FSMModel:
         self.transitions = []
         self.comments = []
 
+        self._handle_change()
+
     def get_state_by_id(self, state_id):
         for state in self.states:
             if state.id == state_id:
@@ -370,7 +399,8 @@ class FSMModel:
 
         for transition_json in model_json.get("transitions", []):
             source = self.get_state_by_id(transition_json.get("source"))
-            destination = self.get_state_by_id(transition_json.get("destination"))
+            destination = self.get_state_by_id(
+                transition_json.get("destination"))
 
             transition = TransitionItem(
                 source, destination, transition_json.get("label", ""))
@@ -378,11 +408,13 @@ class FSMModel:
             transition.color = QColor(props.get("color", "#1e81b0"))
             transition.width = props.get("width", 2)
             cp_props = props.get("control_point", {})
-            transition.control_point_color = QColor(cp_props.get("color", "#1e81b0"))
-            transition.control_point = QPointF(cp_props.get("x", 0), cp_props.get("y", 0))
+            transition.control_point_color = QColor(
+                cp_props.get("color", "#1e81b0"))
+            transition.control_point = QPointF(
+                cp_props.get("x", 0), cp_props.get("y", 0))
             transition.input_symbols = transition_json.get("input_symbols", [])
-            transition.guard_condition = transition_json.get("guard_condition", "")
+            transition.guard_condition = transition_json.get(
+                "guard_condition", "")
             transition.output_value = transition_json.get("output_value", "")
             transition.actions = transition_json.get("actions", [])
             self.add_transition(transition)
-            

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QDockWidget, QLabel, QLineEdit, QCheckBox, QTextEdit, QFrame, QGridLayout,
     QVBoxLayout, QPushButton, QDoubleSpinBox, QColorDialog, QStackedWidget, QHBoxLayout, QScrollArea)
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QDoubleValidator, QColor
+from PyQt5.QtGui import QColor
 from typing import TYPE_CHECKING
 
 from app.ui.items.state import StateItem

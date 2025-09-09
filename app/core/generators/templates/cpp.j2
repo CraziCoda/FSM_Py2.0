@@ -1,0 +1,66 @@
+#include <string>
+#include <map>
+#include <set>
+#include <utility>
+#include <functional>
+
+class {{ sanitize_name(fsm_model.name) }} {
+private:
+    std::string current_state;
+    std::set<std::string> accepting_states;
+    std::map<std::pair<std::string, std::string>, std::string> transitions;
+    std::map<std::pair<std::string, std::string>, std::function<void(const std::string&, const std::string&, const std::string&)>> callbacks;
+
+public:
+    {{ sanitize_name(fsm_model.name) }}() {
+        {% if initial_state -%}
+        current_state = "{{ initial_state.name }}";
+        {% endif -%}
+        
+        // Add accepting states
+        {%- for state in accepting_states %}
+        accepting_states.insert("{{ state.name }}");
+        {%- endfor %}
+        
+        // Add transitions
+        {%- for transition in fsm_model.transitions %}
+        {%- for symbol in transition.input_symbols %}
+        transitions[{"{{ transition.source.name }}", "{{ symbol }}"}] = "{{ transition.destination.name }}";
+        {%- endfor %}
+        {%- endfor %}
+    }
+    
+    bool transition(const std::string& input_symbol) {
+        auto key = std::make_pair(current_state, input_symbol);
+        if (transitions.find(key) != transitions.end()) {
+            std::string old_state = current_state;
+            current_state = transitions[key];
+            // Execute callback if registered
+            if (callbacks.find(key) != callbacks.end()) {
+                callbacks[key](old_state, current_state, input_symbol);
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    std::string get_current_state() const {
+        return current_state;
+    }
+    
+    bool is_accepting() const {
+        return accepting_states.find(current_state) != accepting_states.end();
+    }
+    
+    void add_callback(const std::string& from_state, const std::string& input_symbol, 
+                     std::function<void(const std::string&, const std::string&, const std::string&)> callback) {
+        auto key = std::make_pair(from_state, input_symbol);
+        callbacks[key] = callback;
+    }
+    
+    void reset() {
+        {% if initial_state -%}
+        current_state = "{{ initial_state.name }}";
+        {% endif %}
+    }
+};

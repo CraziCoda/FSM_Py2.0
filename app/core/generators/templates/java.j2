@@ -1,0 +1,69 @@
+import java.util.*;
+import java.util.function.*;
+
+public class {{ sanitize_name(fsm_model.name) }} {
+    private String currentState;
+    private Set<String> acceptingStates;
+    private Map<String, String> transitions;
+    private Map<String, TriConsumer<String, String, String>> callbacks;
+    
+    @FunctionalInterface
+    public interface TriConsumer<T, U, V> {
+        void accept(T t, U u, V v);
+    }
+    
+    public {{ sanitize_name(fsm_model.name) }}() {
+        acceptingStates = new HashSet<>();
+        transitions = new HashMap<>();
+        callbacks = new HashMap<>();
+        
+        {% if initial_state -%}
+        currentState = "{{ initial_state.name }}";
+        {% endif -%}
+        
+        // Add accepting states
+        {%- for state in accepting_states %}
+        acceptingStates.add("{{ state.name }}");
+        {%- endfor %}
+        
+        // Add transitions
+        {%- for transition in fsm_model.transitions %}
+        {%- for symbol in transition.input_symbols %}
+        transitions.put("{{ transition.source.name }},{{ symbol }}", "{{ transition.destination.name }}");
+        {%- endfor %}
+        {%- endfor %}
+    }
+    
+    public boolean transition(String inputSymbol) {
+        String key = currentState + "," + inputSymbol;
+        if (transitions.containsKey(key)) {
+            String oldState = currentState;
+            currentState = transitions.get(key);
+            // Execute callback if registered
+            if (callbacks.containsKey(key)) {
+                callbacks.get(key).accept(oldState, currentState, inputSymbol);
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    public String getCurrentState() {
+        return currentState;
+    }
+    
+    public boolean isAccepting() {
+        return acceptingStates.contains(currentState);
+    }
+    
+    public void addCallback(String fromState, String inputSymbol, TriConsumer<String, String, String> callback) {
+        String key = fromState + "," + inputSymbol;
+        callbacks.put(key, callback);
+    }
+    
+    public void reset() {
+        {% if initial_state -%}
+        currentState = "{{ initial_state.name }}";
+        {% endif %}
+    }
+}

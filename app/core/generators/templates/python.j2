@@ -1,0 +1,45 @@
+class {{ sanitize_name(fsm_model.name) }}:
+    def __init__(self):
+        {% if initial_state -%}
+        self.current_state = '{{ initial_state.name }}'
+        {% else -%}
+        self.current_state = None
+        {% endif -%}
+        self.accepting_states = {{ accepting_states | map(attribute='name') | list }}
+        self.callbacks = {}
+        
+    def transition(self, input_symbol):
+        transitions = {
+            {%- for transition in fsm_model.transitions %}
+            {%- for symbol in transition.input_symbols %}
+            ('{{ transition.source.name }}', '{{ symbol }}'): '{{ transition.destination.name }}',
+            {%- endfor %}
+            {%- endfor %}
+        }
+        key = (self.current_state, input_symbol)
+        if key in transitions:
+            old_state = self.current_state
+            self.current_state = transitions[key]
+            # Execute callback if registered
+            if key in self.callbacks:
+                self.callbacks[key](old_state, self.current_state, input_symbol)
+            return True
+        return False
+    
+    def get_current_state(self):
+        return self.current_state
+    
+    def is_accepting(self):
+        return self.current_state in self.accepting_states
+    
+    def add_callback(self, from_state, input_symbol, callback):
+        """Add callback function for specific transition"""
+        key = (from_state, input_symbol)
+        self.callbacks[key] = callback
+    
+    def reset(self):
+        {% if initial_state -%}
+        self.current_state = '{{ initial_state.name }}'
+        {% else -%}
+        self.current_state = None
+        {% endif %}

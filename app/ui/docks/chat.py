@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QDockWidget, QVBoxLayout, QHBoxLayout, QWidget, QTextEdit, 
     QLineEdit, QPushButton, QLabel, QFrame
 )
-from PyQt5.QtCore import Qt, QTimer, QSettings
+from PyQt5.QtCore import Qt, QTimer, QSettings, QThread, pyqtSignal
 from app.core.ai import Assistant
 import json
 from typing import TYPE_CHECKING
@@ -10,6 +10,31 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.ui.main_window import MainWindow
 
+class ChatThread(QThread):
+    message_received = pyqtSignal(str)
+
+    def __init__(self, parent: "MainWindow" = None, user_text: str = ""):
+        super().__init__(parent)
+        self.parent_window = parent
+        self.assistant = Assistant()
+        self.user_text = user_text
+    
+    def run(self):
+        if self.parent_window is None:
+            return
+        
+        if hasattr(self.parent_window, 'canvas') and self.parent_window.canvas.fsm_model:
+            try:
+                context = json.dumps(self.parent_window.canvas.fsm_model.to_json(), indent=2)
+            except:
+                context = "Current FSM model available"
+
+            try:
+                response = self.assistant.get_response(self.user_text, context)
+            except Exception as e:
+                response = f"Error: {str(e)}. Please check your API key configuration."
+
+            self.message_received.emit(response)
 
 class ChatDock(QDockWidget):
     def __init__(self, parent: "MainWindow" = None):
@@ -98,32 +123,23 @@ class ChatDock(QDockWidget):
         self.add_message("user", user_text)
         self.show_loading()
 
-        QTimer.singleShot(100, self.get_response)
+        self.get_response()
     
     def get_response(self):
         user_text = self.input_field.toPlainText().strip()
-        
-        context = ""
-        if hasattr(self.parent_window, 'canvas') and self.parent_window.canvas.fsm_model:
-            try:
-                context = json.dumps(self.parent_window.canvas.fsm_model.to_json(), indent=2)
-            except:
-                context = "Current FSM model available"
-        
-        try:
-            response = self.assistant.get_response(user_text, context)
-            self.hide_loading()
-            self.input_field.clear()
-            
-            # Check if response contains FSM JSON
-            if response.startswith("new fsm") or response.startswith("mod fsm"):
-                self.process_fsm_response(response)
-            else:
-                self.add_message("assistant", response)
 
-        except Exception as e:
-            self.hide_loading()
-            self.add_message("assistant", f"Error: {str(e)}. Please check your API key configuration.")
+        chat_worker = ChatThread(self.parent_window, user_text)
+        chat_worker.message_received.connect(self.chat_worker_finished)
+        chat_worker.start()
+        
+    def chat_worker_finished(self, result):
+        self.hide_loading()
+        self.input_field.clear()
+        
+        if result.startswith("new fsm") or result.startswith("mod fsm"):
+            self.process_fsm_response(result)
+        else:
+            self.add_message("assistant", result)
                     
     def show_loading(self):
         """Show loading indicator"""
@@ -278,6 +294,7 @@ class ChatDock(QDockWidget):
                 from app.ui.items.state import FSMModel
                 new_model = FSMModel()
                 new_model.from_json(fsm_data)
+                self.parent_window.model_dock.update_model_info(new_model)
                 self.parent_window.canvas.set_new_model(new_model)
                 self.add_message("assistant", f"{action} FSM: {fsm_data.get('name', 'Unnamed')}")
             else:

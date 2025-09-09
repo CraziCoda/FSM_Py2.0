@@ -7,13 +7,17 @@ from app.ui.docks.simulation import SimulationDock
 from app.ui.docks.chat import ChatDock
 from app.ui.canvas import CanvasView
 from app.ui.docks.console import ConsoleDock
+from app.ui.docks.model import FSMModelDock
 from app.core.logger import ActivityLogger
 from app.core.validator import FSMValidator
 from app.core.commands import SaveFSMModelCommand, OpenMachine
 from app.ui.dialogs.assistant_config import AssistantConfigDialog
+from app.ui.dialogs.batch_test import BatchTestDialog
 from app.core.recent_files import RecentFilesManager
+from app.ui.dialogs.code_generator import CodeGeneratorDialog
 from utils.constants import ICONS_PATH
 import os
+import json
 
 
 class MainWindow(QMainWindow):
@@ -84,6 +88,18 @@ class MainWindow(QMainWindow):
         
         simulation_menu = menu.addMenu("Simulation")
         
+        # Batch testing
+        batch_action = QAction("Batch Testing", self)
+        batch_action.triggered.connect(self.show_batch_testing)
+        simulation_menu.addAction(batch_action)
+        
+        simulation_menu.addSeparator()
+        
+        # Export simulation results
+        export_action = QAction("Export Last Results", self)
+        export_action.triggered.connect(self.export_simulation_results)
+        simulation_menu.addAction(export_action)
+        
         view_menu = menu.addMenu("View")
         view_menu.addAction(self.elements_dock.toggleViewAction())
         view_menu.addAction(self.properties_dock.toggleViewAction())
@@ -92,6 +108,21 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.console_dock.toggleViewAction())
         
         tools_menu = menu.addMenu("Tools")
+        
+        # Generator submenu
+        generator_menu = tools_menu.addMenu("Generator")
+        
+        python_action = QAction("Python", self)
+        python_action.triggered.connect(lambda: self.show_code_generator("python"))
+        generator_menu.addAction(python_action)
+        
+        cpp_action = QAction("C++", self)
+        cpp_action.triggered.connect(lambda: self.show_code_generator("cpp"))
+        generator_menu.addAction(cpp_action)
+        
+        java_action = QAction("Java", self)
+        java_action.triggered.connect(lambda: self.show_code_generator("java"))
+        generator_menu.addAction(java_action)
         
         assistant_menu = menu.addMenu("Assistant")
         config_action = QAction("Configuration", self)
@@ -114,6 +145,7 @@ class MainWindow(QMainWindow):
 
         open_file_action = QAction(QIcon(f"{ICONS_PATH}/open-folder.png"), "Open", self)
         open_file_action.triggered.connect(self.open_file)
+        
         open_file_action.setShortcut("Ctrl+O")
 
         control_group = QActionGroup(self)
@@ -180,6 +212,7 @@ class MainWindow(QMainWindow):
 
         toolbar.addAction(undo_action)
         toolbar.addAction(redo_action)
+        
 
         toolbar.setIconSize(QSize(18, 18))
         toolbar.setStyleSheet(TOOLBAR_STYLE)
@@ -199,9 +232,13 @@ class MainWindow(QMainWindow):
         self.chat_dock = ChatDock(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.chat_dock)
 
+        self.model_dock = FSMModelDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.model_dock)
+
+        self.tabifyDockWidget(self.model_dock, self.properties_dock)
         self.tabifyDockWidget(self.properties_dock, self.simulation_dock)
         self.tabifyDockWidget(self.simulation_dock, self.chat_dock)
-        self.properties_dock.raise_()
+        self.model_dock.raise_()
 
         self.console_dock = ConsoleDock(self)    
         self.logger.setConsoleDock(self.console_dock)
@@ -223,7 +260,6 @@ class MainWindow(QMainWindow):
         return self.selected_tool
     
     def open_file(self):
-        """Open file and add to recent files"""
         command = OpenMachine(self.canvas.fsm_model, self.canvas)
         self.canvas.command_manager.execute(command)
         
@@ -233,7 +269,6 @@ class MainWindow(QMainWindow):
             self.update_recent_files_menu()
     
     def open_recent_file(self, file_path):
-        """Open a recent file"""
         if os.path.exists(file_path):
             # Create a modified OpenMachine command for recent files
             import json
@@ -244,6 +279,7 @@ class MainWindow(QMainWindow):
                     json_data = json.load(f)
                 
                 new_model = FSMModel()
+                new_model.on_change(self.model_dock.update_model_info)
                 new_model.set_path(file_path)
                 new_model.from_json(json_data)
                 
@@ -264,7 +300,6 @@ class MainWindow(QMainWindow):
                 self.update_recent_files_menu()
     
     def update_recent_files_menu(self):
-        """Update the recent files menu"""
         self.recent_menu.clear()
         
         recent_files = self.recent_files.get_recent_files()
@@ -287,17 +322,14 @@ class MainWindow(QMainWindow):
             self.recent_menu.addAction(clear_action)
     
     def clear_recent_files(self):
-        """Clear all recent files"""
         self.recent_files.clear_recent_files()
         self.update_recent_files_menu()
     
     def show_assistant_config(self):
-        """Show assistant configuration dialog"""
         dialog = AssistantConfigDialog(self)
         dialog.exec_()
     
     def clear_fsm(self):
-        """Clear the current FSM and create a new empty one"""
         if not self.canvas.fsm_model.is_saved:
             reply = QMessageBox.question(
                 self, "Unsaved Changes", 
@@ -310,8 +342,52 @@ class MainWindow(QMainWindow):
         
         from app.ui.items.state import FSMModel
         new_model = FSMModel()
+        self.model_dock.update_model_info(new_model)
         self.canvas.set_new_model(new_model)
         self.logger.log("Created new empty FSM", self.__class__.__name__)
+        
+    def show_code_generator(self, language=None):
+        dialog = CodeGeneratorDialog(self.canvas.fsm_model, self)
+        if language:
+            lang_map = {"python": "Python", "cpp": "C++", "java": "Java"}
+            if language in lang_map:
+                index = dialog.lang_combo.findText(lang_map[language])
+                if index >= 0:
+                    dialog.lang_combo.setCurrentIndex(index)
+        dialog.exec_()
+    
+    
+    def show_batch_testing(self):
+        dialog = BatchTestDialog(self)
+        dialog.exec_()
+    
+    def export_simulation_results(self):
+        if hasattr(self.simulation_dock, 'last_results') and self.simulation_dock.last_results:
+            from PyQt5.QtWidgets import QFileDialog
+            
+            file_path, _ = QFileDialog.getSaveFileName(
+                self, "Export Simulation Results", "simulation_results.json", 
+                "JSON Files (*.json);;CSV Files (*.csv)")
+            
+            if file_path:
+                try:
+                    if file_path.endswith('.json'):
+                        with open(file_path, 'w') as f:
+                            json.dump(self.simulation_dock.last_results, f, indent=2)
+                    else:  # CSV
+                        import csv
+                        with open(file_path, 'w', newline='') as f:
+                            writer = csv.writer(f)
+                            writer.writerow(['Step', 'Input', 'State', 'Output'])
+                            for i, result in enumerate(self.simulation_dock.last_results):
+                                writer.writerow([i, result.get('input', ''), 
+                                               result.get('state', ''), result.get('output', '')])
+                    
+                    QMessageBox.information(self, "Export Complete", f"Results exported to {file_path}")
+                except Exception as e:
+                    QMessageBox.warning(self, "Export Error", f"Failed to export: {str(e)}")
+        else:
+            QMessageBox.information(self, "No Results", "No simulation results to export. Run a simulation first.")
 
 
 

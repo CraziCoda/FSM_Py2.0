@@ -331,8 +331,10 @@ class OpenMachine(BaseCommand):
                 json_data = json.load(f)
 
             new_model = FSMModel()
+            new_model.on_change(self.canvas.parent_window.model_dock.update_model_info)
             new_model.set_path(self.file_path)
             new_model.from_json(json_data)
             self.log = f"Opened machine: {new_model.name}"
+            new_model.set_is_saved(True)
 
             self.canvas.set_new_model(new_model)

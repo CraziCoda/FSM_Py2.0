@@ -51,7 +51,7 @@ class Simulation:
         self.inputs = [char for char in input] if delimiter == "" else input.split(delimiter)
         
         if len(self.fsm_model.input_alphabet) != 0 and is_keyboard_inputs == False:
-            if not self.fsm_model.input_alphabet.issuperset(self.inputs):
+            if not (set(self.inputs) <= set(self.fsm_model.input_alphabet)):
                 self.state = SimulationStates.ERROR
                 self.log(f"Input alphabet does not match the input: {input}", "ERROR")
                 return

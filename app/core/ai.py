@@ -72,6 +72,7 @@ You MUST start every response with one of these prefixes:
 - At least one accepting state recommended
 - Input symbols: single characters or short strings
 - Transitions must reference valid state IDs
+- the html should just be tags for strings like <b>bold</b> and not full html
 
 **TECHNICAL REQUIREMENTS:**
 - Moore machines: output_value in states
